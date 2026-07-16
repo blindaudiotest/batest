@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/blindaudiotest/batest/schema/manifest.schema.json",
+  "title": "batest manifest.json (v1)",
+  "description": "Lightweight, redundant summary of a .batest test, as described in SPEC.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "createdWith",
+    "createdAt",
+    "title",
+    "comparisonCategory",
+    "testType",
+    "models"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Container/schema version. Starts at 1."
+    },
+    "createdWith": {
+      "type": "string",
+      "description": "Application name and version that produced the file."
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "Creation timestamp, ISO 8601."
+    },
+    "title": {
+      "type": "string",
+      "description": "Test display title."
+    },
+    "comparisonCategory": {
+      "type": "string",
+      "$comment": "Resolved, human-readable value; if 'others' was selected, the free-text value is substituted in directly. TODO: the full canonical list of comparison category values (COMPARISON_CATEGORIES) is not enumerated in the source specification, so this is intentionally left as an open string rather than a guessed enum.",
+      "minLength": 1
+    },
+    "testType": {
+      "type": "string",
+      "enum": ["ab", "abx", "abx-then-ab", "ranking", "rating"],
+      "description": "The test type, for display without parsing test.json."
+    },
+    "models": {
+      "type": "array",
+      "description": "Distinct manufacturer/model combinations used across all tracks, deduplicated. Empty array if the test has no manufacturer/model data.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["manufacturer", "model"],
+        "properties": {
+          "manufacturer": { "type": "string" },
+          "model": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,91 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  schema-validity:
+    name: Validate JSON Schemas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ajv-cli
+        run: npm install --no-save ajv-cli@5
+
+      - name: Validate manifest.schema.json is a valid JSON Schema (Draft 2020-12)
+        run: npx ajv-cli compile -s schema/manifest.schema.json --spec=draft2020
+
+      - name: Validate test.schema.json is a valid JSON Schema (Draft 2020-12)
+        run: npx ajv-cli compile -s schema/test.schema.json --spec=draft2020
+
+  example-validation:
+    name: Validate example .batest files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ajv-cli
+        run: npm install --no-save ajv-cli@5
+
+      - name: Find and validate example .batest files
+        run: |
+          set -e
+
+          shopt -s nullglob
+          files=(examples/*.batest)
+
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No example files found, skipping."
+            exit 0
+          fi
+
+          workdir="$(mktemp -d)"
+          status=0
+
+          for f in "${files[@]}"; do
+            name="$(basename "$f" .batest)"
+            dest="$workdir/$name"
+            mkdir -p "$dest"
+
+            echo "Extracting $f ..."
+            unzip -q "$f" -d "$dest"
+
+            if [ ! -f "$dest/manifest.json" ]; then
+              echo "::error file=$f::manifest.json not found in archive"
+              status=1
+              continue
+            fi
+            if [ ! -f "$dest/test.json" ]; then
+              echo "::error file=$f::test.json not found in archive"
+              status=1
+              continue
+            fi
+
+            echo "Validating $name/manifest.json ..."
+            if ! npx ajv-cli validate --spec=draft2020 -s schema/manifest.schema.json -d "$dest/manifest.json"; then
+              status=1
+            fi
+
+            echo "Validating $name/test.json ..."
+            if ! npx ajv-cli validate --spec=draft2020 -s schema/test.schema.json -d "$dest/test.json"; then
+              status=1
+            fi
+          done
+
+          exit $status

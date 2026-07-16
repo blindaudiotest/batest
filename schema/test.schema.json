@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/blindaudiotest/batest/schema/test.schema.json",
+  "title": "batest test.json (v1)",
+  "description": "Primary, authoritative description of a .batest test, as described in SPEC.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "creatorUuid",
+    "title",
+    "comparisonCategory",
+    "tracks",
+    "backingTrack",
+    "testTypeConfig"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "Stable, immutable test identifier (UUIDv7). MUST NOT change once assigned, per SPEC.md 'Identifier Stability'."
+    },
+    "creatorUuid": {
+      "type": ["string", "null"],
+      "description": "Optional creator identifier. Always present; null when not set."
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional free-text description. Omitted entirely when unset."
+    },
+    "comparisonCategory": {
+      "type": "string",
+      "minLength": 1,
+      "$comment": "Raw category value (e.g. 'microphones', 'others'). TODO: full COMPARISON_CATEGORIES enum not given in source spec."
+    },
+    "comparisonCategoryOther": {
+      "type": "string",
+      "description": "Free-text value when comparisonCategory is 'others'. Omitted otherwise."
+    },
+    "comparisonSubcategory": {
+      "type": "string",
+      "description": "Only relevant for categories with subcategories (currently only 'effects'). Omitted otherwise."
+    },
+    "comparisonSubcategoryOther": {
+      "type": "string",
+      "description": "Free-text value when comparisonSubcategory is 'others'. Omitted otherwise."
+    },
+    "content": { "$ref": "#/$defs/content" },
+    "recording": { "$ref": "#/$defs/recording" },
+    "tracks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/track" }
+    },
+    "backingTrack": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["file", "gainDb"],
+          "properties": {
+            "file": { "type": "string" },
+            "gainDb": { "type": "number" }
+          }
+        }
+      ],
+      "description": "Always present; null when the test does not use a backing track."
+    },
+    "loudnessMatching": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "reference", "version"],
+      "description": "Omitted entirely when loudness matching was not enabled for the test.",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "$comment": "Currently the only defined value is 'integrated-lufs'."
+        },
+        "reference": {
+          "type": "string",
+          "$comment": "Currently the only defined value is 'loudest'."
+        },
+        "version": { "type": "integer" }
+      }
+    },
+    "trackLengthMode": {
+      "type": "string",
+      "enum": ["shortest", "longest"],
+      "description": "Omitted when all tracks have the same length, or there is only one track. Never present for a Rating test."
+    },
+    "playback": {
+      "type": "object",
+      "description": "Reserved for future fields; no fields defined yet. Omitted entirely when empty."
+    },
+    "randomization": {
+      "type": "object",
+      "description": "Reserved for future fields; no fields defined yet. Omitted entirely when empty."
+    },
+    "assets": { "$ref": "#/$defs/assets" },
+    "resources": {
+      "type": "array",
+      "description": "External references not embedded in the container. Omitted entirely when empty.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "title", "url"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "$comment": "Open-ended; e.g. 'link', 'paper'. Not an exhaustive enum in the source spec."
+          },
+          "title": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      }
+    },
+    "testTypeConfig": { "$ref": "#/$defs/testTypeConfig" }
+  },
+  "$defs": {
+    "content": {
+      "type": "object",
+      "description": "What is being compared. Optional at test and track level (delta only at track level). Omitted entirely when there is nothing to add.",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Free-text or open-vocabulary label for the source material, e.g. 'vocals', 'acoustic-guitar', 'full-mix'."
+        },
+        "genres": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "recording": {
+      "type": "object",
+      "description": "Recording setup context. Optional at test and track level (delta only at track level). Omitted entirely when there is nothing to add.",
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "type": "string",
+          "description": "Free-text, e.g. 'studio', 'live', 'field', 'home-studio'."
+        },
+        "room": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Free-form object describing the space. All sub-fields optional.",
+              "properties": {
+                "type": { "type": "string" },
+                "sizeSqm": { "type": "number" },
+                "acoustics": { "type": "string" },
+                "notes": { "type": ["string", "null"] }
+              }
+            }
+          ]
+        },
+        "instrument": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Free-form object describing the instrument or voice being recorded."
+            }
+          ]
+        },
+        "signalChain": {
+          "type": "array",
+          "description": "Ordered recording chain shared by all tracks (test level) or the track-specific delta (track level).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "manufacturer", "model"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "$comment": "e.g. 'microphone', 'preamp', 'converter', 'cable', 'other'. Not an exhaustive enum in the source spec."
+              },
+              "manufacturer": { "type": "string" },
+              "model": { "type": "string" }
+            }
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "description": "Omitted entirely when neither cover nor items has content. Only the sub-field(s) with actual content are present.",
+      "additionalProperties": false,
+      "properties": {
+        "cover": {
+          "type": "string",
+          "description": "Path to the test's preview image. Omitted when no cover image is set."
+        },
+        "items": {
+          "type": "array",
+          "description": "Omitted when empty.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "file", "label"],
+            "properties": {
+              "type": { "type": "string", "enum": ["image", "video", "pdf"] },
+              "file": { "type": "string" },
+              "label": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "filename",
+        "originalFilename",
+        "label",
+        "originalFormat",
+        "storedFormat",
+        "originalSampleRate",
+        "originalBitDepth",
+        "durationSeconds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Sequential track identifier, e.g. 'track1'."
+        },
+        "filename": {
+          "type": "string",
+          "description": "Technical, sequentially generated name the file is stored under in required/. Authoritative for locating the file."
+        },
+        "originalFilename": {
+          "type": "string",
+          "description": "Name of the file as originally uploaded by the user. Display purposes only."
+        },
+        "manufacturer": { "type": "string" },
+        "model": { "type": "string" },
+        "manufacturerOther": { "type": "string" },
+        "modelOther": { "type": "string" },
+        "label": {
+          "type": ["string", "null"],
+          "description": "Optional display name for the track. Always present; null when not set."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text note. Omitted entirely when unset."
+        },
+        "content": { "$ref": "#/$defs/content" },
+        "recording": { "$ref": "#/$defs/recording" },
+        "originalFormat": {
+          "type": "string",
+          "$comment": "TODO: exact string tokens for aac/m4a/ogg-vorbis are not given as examples in the source spec. Confirmed values: 'wav', 'aiff', 'mp3', 'flac'."
+        },
+        "storedFormat": {
+          "type": "string",
+          "$comment": "TODO: see originalFormat. Confirmed values: 'flac' (converted), plus the same lossy tokens as originalFormat when passed through as-is."
+        },
+        "originalSampleRate": {
+          "type": "integer",
+          "description": "Sample rate of the originally uploaded file, in Hz."
+        },
+        "originalBitDepth": {
+          "type": ["integer", "null"],
+          "description": "Bit depth of the originally uploaded file. Always present; null for lossy-compressed formats."
+        },
+        "durationSeconds": {
+          "type": "number"
+        },
+        "integratedLufs": {
+          "type": "number",
+          "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for the test."
+        }
+      }
+    },
+    "ratingCategoryNumeric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "scaleType",
+        "scaleMin",
+        "scaleMax",
+        "scaleMinLabel",
+        "scaleMaxLabel"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string" },
+        "scaleType": { "const": "numeric" },
+        "scaleMin": { "type": "number" },
+        "scaleMax": { "type": "number" },
+        "scaleMinLabel": { "type": ["string", "null"] },
+        "scaleMaxLabel": { "type": ["string", "null"] }
+      }
+    },
+    "ratingCategoryBipolar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "scaleType",
+        "scaleRadius",
+        "centerLabel",
+        "negativeLabel",
+        "positiveLabel"
+      ],
+      "properties": {
+        "id": { "type": "integer", "minimum": 0 },
+        "label": { "type": "string" },
+        "scaleType": { "const": "bipolar" },
+        "scaleRadius": { "type": "number" },
+        "centerLabel": { "type": "string" },
+        "negativeLabel": { "type": "string" },
+        "positiveLabel": { "type": "string" }
+      }
+    },
+    "testTypeConfig": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "description": "Exactly one key, identifying the test type.",
+      "additionalProperties": false,
+      "properties": {
+        "ab": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["testRounds"],
+          "properties": {
+            "testRounds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "abx": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["testRounds"],
+          "properties": {
+            "testRounds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "abx-then-ab": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["abxRounds", "abRounds"],
+          "properties": {
+            "abxRounds": { "type": "integer", "minimum": 1 },
+            "abRounds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "ranking": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["testRounds"],
+          "properties": {
+            "testRounds": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "rating": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ratingMode", "ratingCategories"],
+          "properties": {
+            "ratingMode": {
+              "type": "string",
+              "enum": ["identified", "blind"]
+            },
+            "ratingCategories": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  { "$ref": "#/$defs/ratingCategoryNumeric" },
+                  { "$ref": "#/$defs/ratingCategoryBipolar" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
