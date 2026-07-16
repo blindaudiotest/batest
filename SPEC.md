@@ -389,13 +389,13 @@ by an older implementation).
 
 ### Track Object Schema
 
-Each entry in `tracks[]` follows this schema. Track identifiers are
-sequential (`track1`, `track2`, ...), independent of test type, so the
-same schema is used for A/B, A/B/X, and multitrack Ranking tests alike.
+Each entry in `tracks[]` follows this schema, independent of test
+type, so the same schema is used for A/B, A/B/X, and multitrack
+Ranking tests alike.
 
 ```json
 {
-  "id": "track1",
+  "id": 0,
   "filename": "track1.flac",
   "originalFilename": "Vocal.wav",
   "manufacturer": "neumann",
@@ -415,7 +415,11 @@ same schema is used for A/B, A/B/X, and multitrack Ranking tests alike.
 }
 ```
 
-- `id` — the track's sequential identifier (e.g. `"track1"`). REQUIRED.
+- `id` — the track's zero-based integer index within the `tracks`
+  array. REQUIRED. `id` MUST correspond to the track's position in
+  `tracks` (the first track has `id: 0`, the second `id: 1`, and so
+  on, incrementing sequentially), and MUST be unique within a given
+  test.
 - `filename` — the technical, sequentially generated name the file is
   actually stored under in `required/` (e.g. `"track1.flac"`).
   REQUIRED. This is authoritative for locating the track's audio file

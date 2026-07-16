@@ -238,8 +238,9 @@
       ],
       "properties": {
         "id": {
-          "type": "string",
-          "description": "Sequential track identifier, e.g. 'track1'."
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of the track within the tracks array. MUST correspond to the track's position in tracks (first track is 0, second is 1, ...) and MUST be unique within the test."
         },
         "filename": {
           "type": "string",
