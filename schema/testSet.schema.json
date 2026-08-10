@@ -1,24 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/blindaudiotest/batest/schema/test.schema.json",
-  "title": "batest test.json (v1)",
-  "description": "Primary, authoritative description of a .batest test, as described in SPEC.md.",
+  "$id": "https://github.com/blindaudiotest/batest/schema/testSet.schema.json",
+  "title": "batest testSet.json (v2)",
+  "description": "Primary, authoritative description of a .batest test set, as described in SPEC.md.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "id",
+    "testSetId",
     "creatorUuid",
     "title",
     "comparisonCategory",
-    "tracks",
-    "backingTrack",
-    "testTypeConfig"
+    "test"
   ],
   "properties": {
-    "id": {
+    "testSetId": {
       "type": "string",
       "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-      "description": "Stable, immutable test identifier (UUIDv7). MUST NOT change once assigned, per SPEC.md 'Identifier Stability'."
+      "description": "Stable, immutable test-set identifier (UUIDv7). MUST NOT change once assigned, per SPEC.md 'Identifier Stability'."
     },
     "creatorUuid": {
       "type": ["string", "null"],
@@ -49,48 +47,6 @@
       "description": "Free-text value when comparisonSubcategory is 'others'. Omitted otherwise."
     },
     "content": { "$ref": "#/$defs/content" },
-    "recording": { "$ref": "#/$defs/recording" },
-    "tracks": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/track" }
-    },
-    "backingTrack": {
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["file", "gainDb"],
-          "properties": {
-            "file": { "type": "string" },
-            "gainDb": { "type": "number" }
-          }
-        }
-      ],
-      "description": "Always present; null when the test does not use a backing track."
-    },
-    "loudnessMatching": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["mode", "reference", "version"],
-      "description": "Omitted entirely when loudness matching was not enabled for the test.",
-      "properties": {
-        "mode": {
-          "type": "string",
-          "$comment": "Currently the only defined value is 'integrated-lufs'."
-        },
-        "reference": {
-          "type": "string",
-          "$comment": "Currently the only defined value is 'loudest'."
-        },
-        "version": { "type": "integer" }
-      }
-    },
-    "trackLengthMode": {
-      "type": "string",
-      "enum": ["shortest", "longest"],
-      "description": "Omitted when all tracks have the same length, or there is only one track. Never present for a Rating test."
-    },
     "playback": {
       "type": "object",
       "description": "Reserved for future fields; no fields defined yet. Omitted entirely when empty."
@@ -117,12 +73,136 @@
         }
       }
     },
-    "testTypeConfig": { "$ref": "#/$defs/testTypeConfig" }
+    "test": {
+      "type": "array",
+      "description": "One or more test objects making up the test set.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/testObject" }
+    }
   },
   "$defs": {
+    "testObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["testId", "testType", "tracks", "backingTrack", "testTypeConfig"],
+      "properties": {
+        "testId": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of this test object within the test array. MUST correspond to its position in test (first object is 0, second is 1, ...) and MUST be unique within the test set."
+        },
+        "testType": {
+          "type": "string",
+          "enum": ["ab", "abx", "abx-then-ab", "ranking", "rating"],
+          "description": "This test object's test type. MUST match testTypeConfig's single key on the same object."
+        },
+        "content": { "$ref": "#/$defs/content" },
+        "recording": { "$ref": "#/$defs/recording" },
+        "tracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/track" }
+        },
+        "backingTrack": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["file", "gainDb"],
+              "properties": {
+                "file": { "type": "string" },
+                "gainDb": { "type": "number" }
+              }
+            }
+          ],
+          "description": "Always present; null when this test does not use a backing track."
+        },
+        "loudnessMatching": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "reference", "version"],
+          "description": "Omitted entirely when loudness matching was not enabled for this test.",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "$comment": "Currently the only defined value is 'integrated-lufs'."
+            },
+            "reference": {
+              "type": "string",
+              "$comment": "Currently the only defined value is 'loudest'."
+            },
+            "version": { "type": "integer" }
+          }
+        },
+        "trackLengthMode": {
+          "type": "string",
+          "enum": ["shortest", "longest"],
+          "description": "Omitted when all of this test's tracks have the same length, or there is only one track. Never present when testType is 'rating'."
+        },
+        "assets": { "$ref": "#/$defs/assets" },
+        "testTypeConfig": { "$ref": "#/$defs/testTypeConfig" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["testType"],
+            "properties": { "testType": { "const": "ab" } }
+          },
+          "then": {
+            "properties": {
+              "testTypeConfig": { "type": "object", "required": ["ab"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["testType"],
+            "properties": { "testType": { "const": "abx" } }
+          },
+          "then": {
+            "properties": {
+              "testTypeConfig": { "type": "object", "required": ["abx"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["testType"],
+            "properties": { "testType": { "const": "abx-then-ab" } }
+          },
+          "then": {
+            "properties": {
+              "testTypeConfig": { "type": "object", "required": ["abx-then-ab"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["testType"],
+            "properties": { "testType": { "const": "ranking" } }
+          },
+          "then": {
+            "properties": {
+              "testTypeConfig": { "type": "object", "required": ["ranking"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["testType"],
+            "properties": { "testType": { "const": "rating" } }
+          },
+          "then": {
+            "properties": {
+              "testTypeConfig": { "type": "object", "required": ["rating"] }
+            }
+          }
+        }
+      ]
+    },
     "content": {
       "type": "object",
-      "description": "What is being compared. Optional at test and track level (delta only at track level). Omitted entirely when there is nothing to add.",
+      "description": "What is being compared. Optional at testSet root, test-object level, and track level. Omitted entirely when there is nothing to add. Track overrides test overrides testSet root, per field.",
       "additionalProperties": false,
       "properties": {
         "type": {
@@ -141,7 +221,7 @@
     },
     "recording": {
       "type": "object",
-      "description": "Recording setup context. Optional at test and track level (delta only at track level). Omitted entirely when there is nothing to add.",
+      "description": "Recording setup context. Optional at test-object level and track level only (not testSet root). Omitted entirely when there is nothing to add. Track overrides test, per field.",
       "additionalProperties": false,
       "properties": {
         "environment": {
@@ -199,12 +279,12 @@
     },
     "assets": {
       "type": "object",
-      "description": "Omitted entirely when neither cover nor items has content. Only the sub-field(s) with actual content are present.",
+      "description": "Optional at testSet root and test-object level (not track level). Omitted entirely when neither cover nor items has content. Only the sub-field(s) with actual content are present.",
       "additionalProperties": false,
       "properties": {
         "cover": {
           "type": "string",
-          "description": "Path to the test's preview image. Omitted when no cover image is set."
+          "description": "Path to the test set's preview image. Omitted when no cover image is set."
         },
         "items": {
           "type": "array",
@@ -226,7 +306,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "id",
+        "trackId",
         "filename",
         "originalFilename",
         "label",
@@ -237,10 +317,10 @@
         "durationSeconds"
       ],
       "properties": {
-        "id": {
+        "trackId": {
           "type": "integer",
           "minimum": 0,
-          "description": "Zero-based index of the track within the tracks array. MUST correspond to the track's position in tracks (first track is 0, second is 1, ...) and MUST be unique within the test."
+          "description": "Zero-based index of the track within its parent test object's tracks array. MUST correspond to the track's position in that tracks array (first track is 0, second is 1, ...) and MUST be unique within that test object's tracks array."
         },
         "filename": {
           "type": "string",
@@ -285,7 +365,7 @@
         },
         "integratedLufs": {
           "type": "number",
-          "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for the test."
+          "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for this test."
         }
       }
     },
@@ -337,7 +417,7 @@
       "type": "object",
       "minProperties": 1,
       "maxProperties": 1,
-      "description": "Exactly one key, identifying the test type.",
+      "description": "Exactly one key, identifying the test type. MUST match the sibling testType field.",
       "additionalProperties": false,
       "properties": {
         "ab": {

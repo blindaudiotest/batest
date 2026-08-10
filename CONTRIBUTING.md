@@ -37,7 +37,7 @@ for the normative rules implementations must follow.
 ## Pull request guidelines
 
 - Schema changes (`schema/manifest.schema.json`,
-  `schema/test.schema.json`) should be accompanied by corresponding
+  `schema/testSet.schema.json`) should be accompanied by corresponding
   updates to the example files in `examples/`.
 - CI must pass before a pull request can be merged — this includes
   schema validity checks and, where example files exist, validation of

@@ -11,7 +11,7 @@ Ranking, and Rating).
 Once example files are added, the CI workflow
 ([`.github/workflows/validate.yml`](../.github/workflows/validate.yml))
 will automatically extract and validate each one's `manifest.json` and
-`test.json` against the schemas in [`schema/`](../schema/).
+`testSet.json` against the schemas in [`schema/`](../schema/).
 
 Example files in this directory are licensed under the MIT License
 (see [`LICENSE-CODE`](../LICENSE-CODE)).

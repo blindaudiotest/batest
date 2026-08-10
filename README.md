@@ -21,13 +21,15 @@ Machine-readable JSON Schemas (Draft 2020-12) for the format's two
 JSON documents are in [`schema/`](schema/):
 
 - [`schema/manifest.schema.json`](schema/manifest.schema.json)
-- [`schema/test.schema.json`](schema/test.schema.json)
+- [`schema/testSet.schema.json`](schema/testSet.schema.json)
 
 ## Status
 
 The specification is versioned independently of any implementation.
-The current version is **v1**, the first stable public release of the
-format. See [CHANGELOG.md](CHANGELOG.md) for release history.
+The current version is **v2**, a breaking revision of v1. **v1**
+remains available for anyone still implementing against it, via this
+repository's `v1.0` git tag/release. See [CHANGELOG.md](CHANGELOG.md)
+for release history.
 
 ## Roadmap
 
