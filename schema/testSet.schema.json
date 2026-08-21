@@ -96,6 +96,10 @@
           "enum": ["ab", "abx", "abx-then-ab", "ranking", "rating"],
           "description": "This test object's test type. MUST match testTypeConfig's single key on the same object."
         },
+        "title": {
+          "type": "string",
+          "description": "Optional display title for this individual test within the test set, independent of testSet.json's root-level title. Omitted entirely when not set (v2.1+)."
+        },
         "content": { "$ref": "#/$defs/content" },
         "recording": { "$ref": "#/$defs/recording" },
         "tracks": {

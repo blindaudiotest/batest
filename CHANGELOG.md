@@ -11,6 +11,19 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.1] - 2026-08-21
+
+### Added
+
+- Added an OPTIONAL `title` field to each test object in
+  `testSet.json`'s `test` array, letting an individual test within a
+  test set carry its own display title, independent of the test set's
+  root-level `title`. The key is omitted entirely when not set, per
+  the existing Schema Hygiene Convention. This is a non-breaking,
+  additive change: `formatVersion` remains `2`, and files written by a
+  v2.0 implementation (which omit this field) remain fully valid under
+  v2.1.
+
 ## [2.0] - 2026-08-01
 
 ### Breaking

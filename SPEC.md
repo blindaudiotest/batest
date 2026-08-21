@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.0
-**Status:** Stable — breaking revision of v1.0
+**Version:** 2.1
+**Status:** Stable — non-breaking, additive revision of v2.0
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,11 +11,14 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.0 only. The v1.0
-> specification (single-test `test.json` structure) remains available
-> in this repository's git history via the `v1.0` tag/release. See
-> [Migration from v1](#migration-from-v1) for a summary of what
-> changed.
+> **v1.0 users:** This document describes v2.1, a non-breaking,
+> additive revision of v2.0 (`formatVersion` remains `2`; see
+> [Test Object Schema](#test-object-schema) for what's new). Files
+> produced by a v2.0 implementation remain fully valid under v2.1. The
+> v1.0 specification (single-test `test.json` structure) remains
+> available in this repository's git history via the `v1.0`
+> tag/release. See [Migration from v1](#migration-from-v1) for a
+> summary of what changed since v1.
 
 ## Table of Contents
 
@@ -255,6 +258,7 @@ material).
 {
   "testId": 0,
   "testType": "abx",
+  "title": "Preamp A vs. Preamp B",
   "content": {},
   "recording": {},
   "tracks": [],
@@ -287,6 +291,11 @@ entirely when empty, per the
   MUST be one of the values defined in [testTypeConfig](#testtypeconfig)
   (`"ab"`, `"abx"`, `"abx-then-ab"`, `"ranking"`, `"rating"`), and MUST
   match `testTypeConfig`'s single key on the same test object.
+- `title` — an OPTIONAL display title for this individual test, distinct
+  from `testSet.json`'s root-level `title` (which names the whole test
+  set). The key is omitted entirely when not set; implementations MAY
+  fall back to a generated label (e.g. `"Test 1"`, based on `testId`)
+  for display when it is absent. *(New in v2.1 — see the note below.)*
 - `content` — OPTIONAL. See
   [Field Placement and Overrides](#field-placement-and-overrides).
 - `recording` — OPTIONAL. See
@@ -300,6 +309,14 @@ entirely when empty, per the
 - `assets` — OPTIONAL, test-specific assets. See
   [Assets](#assets) and [Field Placement and Overrides](#field-placement-and-overrides).
 - `testTypeConfig` — see [testTypeConfig](#testtypeconfig). REQUIRED.
+
+> **v2.1 change:** each test object gained a new OPTIONAL `title`
+> field, letting an individual test within a test set have its own
+> display title, independent of the test set's root-level `title`.
+> This is a non-breaking, additive change — `formatVersion` stays `2`
+> — and files written by a v2.0 implementation (which omit this field)
+> remain fully valid; implementations reading such a file fall back to
+> a generated per-test label as before.
 
 ### Field Placement and Overrides
 
@@ -848,8 +865,9 @@ object, or track object, per
 [Field Placement and Overrides](#field-placement-and-overrides)),
 `comparisonCategoryOther`, `comparisonSubcategory`,
 `comparisonSubcategoryOther`, `loudnessMatching`, `trackLengthMode`,
-and, on each track object, `manufacturer`, `model`,
-`manufacturerOther`, `modelOther`, `notes`, and `integratedLufs`.
+each test object's `title` (new in v2.1), and, on each track object,
+`manufacturer`, `model`, `manufacturerOther`, `modelOther`, `notes`,
+and `integratedLufs`.
 
 A small number of fields are exceptions and are instead always present
 with an explicit `null` value when unset, rather than being omitted:
