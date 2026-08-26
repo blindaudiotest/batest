@@ -102,6 +102,24 @@
         },
         "content": { "$ref": "#/$defs/content" },
         "recording": { "$ref": "#/$defs/recording" },
+        "soundSource": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional raw sound-source-category value for this individual test (e.g. 'vocals', 'other'), scoped per test object rather than per test set. Omitted entirely when not set. New in v2.2."
+        },
+        "soundSourceOther": {
+          "type": "string",
+          "description": "Free-text value when the sentinel 'other' (singular — not 'others') was selected for soundSource. Omitted otherwise. New in v2.2."
+        },
+        "soundSourceSubtype": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional, more specific classification within soundSource. Omitted both when soundSource has no subtypes and when it does but none was selected. New in v2.2."
+        },
+        "soundSourceSubtypeOther": {
+          "type": "string",
+          "description": "Free-text value when the sentinel 'other' was selected for soundSourceSubtype, independent of soundSource's own sentinel. Omitted otherwise. New in v2.2."
+        },
         "tracks": {
           "type": "array",
           "items": { "$ref": "#/$defs/track" }

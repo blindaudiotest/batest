@@ -11,6 +11,33 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.2] - 2026-08-26
+
+### Added
+
+- Added four OPTIONAL fields to each test object in `testSet.json`'s
+  `test` array: `soundSource`, `soundSourceOther`, `soundSourceSubtype`,
+  and `soundSourceSubtypeOther`. These identify the kind of source
+  material that individual test's tracks are drawn from (e.g.
+  `"vocals"`, `"acoustic-guitar"`), following the same
+  raw-value-plus-free-text-fallback pattern already used by
+  `comparisonCategory`/`comparisonCategoryOther` at the `testSet.json`
+  root, but scoped per test object rather than per test set, since
+  different tests within the same test set can compare different kinds
+  of source material. Note that the free-text sentinel for these fields
+  is exactly `"other"` (singular), unlike `comparisonCategory`'s
+  `"others"` — an intentional but easy-to-miss difference. All four
+  keys are omitted entirely when not set, per the existing Schema
+  Hygiene Convention. `manifest.json` is unaffected: since
+  `soundSource` can vary per test within the same test set (like
+  `testType`), it is not surfaced as a single top-level summary field
+  there.
+- This is a non-breaking, additive change: `formatVersion` remains `2`,
+  and files written by a v2.0 or v2.1 implementation (which omit these
+  fields) remain fully valid under v2.2. None of the new fields were
+  added to the test object's `required` list, specifically to preserve
+  this backward compatibility.
+
 ## [2.1] - 2026-08-21
 
 ### Added

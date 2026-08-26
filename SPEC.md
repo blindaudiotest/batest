@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.1
-**Status:** Stable — non-breaking, additive revision of v2.0
+**Version:** 2.2
+**Status:** Stable — non-breaking, additive revision of v2.1
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,12 +11,12 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.1, a non-breaking,
-> additive revision of v2.0 (`formatVersion` remains `2`; see
+> **v1.0 users:** This document describes v2.2, a non-breaking,
+> additive revision of v2.0/v2.1 (`formatVersion` remains `2`; see
 > [Test Object Schema](#test-object-schema) for what's new). Files
-> produced by a v2.0 implementation remain fully valid under v2.1. The
-> v1.0 specification (single-test `test.json` structure) remains
-> available in this repository's git history via the `v1.0`
+> produced by a v2.0 or v2.1 implementation remain fully valid under
+> v2.2. The v1.0 specification (single-test `test.json` structure)
+> remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
 > summary of what changed since v1.
 
@@ -261,6 +261,7 @@ material).
   "title": "Preamp A vs. Preamp B",
   "content": {},
   "recording": {},
+  "soundSource": "vocals",
   "tracks": [],
   "backingTrack": null,
   "loudnessMatching": {
@@ -300,6 +301,33 @@ entirely when empty, per the
   [Field Placement and Overrides](#field-placement-and-overrides).
 - `recording` — OPTIONAL. See
   [Field Placement and Overrides](#field-placement-and-overrides).
+- `soundSource` — an OPTIONAL raw sound-source-category value for this
+  individual test (e.g. `"vocals"`, `"acoustic-guitar"`, `"other"`),
+  identifying what kind of source material this specific test's tracks
+  are drawn from. Unlike `comparisonCategory`, which applies to the
+  whole test set, `soundSource` is scoped to a single test object,
+  since different tests within the same test set can compare different
+  kinds of source material (e.g. a mixed test set with one vocal test
+  and one instrumental test). The key is omitted entirely when not set.
+  *(New in v2.2 — see the note below.)*
+- `soundSourceOther` — holds the free-text specification when the
+  sentinel value `"other"` was selected for `soundSource`. Omitted
+  otherwise. **Note the sentinel here is exactly `"other"`, singular —
+  not `"others"` as used by `comparisonCategory`/`comparisonCategoryOther`
+  at the `testSet.json` root.** This is an intentional but easy-to-miss
+  inconsistency between the two fields; do not assume the same sentinel
+  string applies to both. *(New in v2.2.)*
+- `soundSourceSubtype` — an OPTIONAL, more specific classification
+  within `soundSource` (e.g. a `soundSource` of `"vocals"` might have a
+  `soundSourceSubtype` of `"lead-vocal"` or `"backing-vocal"`). Not
+  every `soundSource` value defines subtypes; the key is omitted
+  entirely both when the chosen `soundSource` has no subtypes and when
+  it does but none was selected. Independent sentinel from
+  `soundSource`'s. *(New in v2.2.)*
+- `soundSourceSubtypeOther` — holds the free-text specification when
+  the sentinel value `"other"` was selected for `soundSourceSubtype`,
+  independently of whatever was selected (or not) for `soundSource`
+  itself. Omitted otherwise. *(New in v2.2.)*
 - `tracks` — the array of track objects being compared in this test.
   REQUIRED. See [Track Object Schema](#track-object-schema).
 - `backingTrack` — see [backingTrack](#backingtrack). REQUIRED (always
@@ -317,6 +345,26 @@ entirely when empty, per the
 > — and files written by a v2.0 implementation (which omit this field)
 > remain fully valid; implementations reading such a file fall back to
 > a generated per-test label as before.
+
+> **v2.2 change:** each test object gained four new OPTIONAL fields —
+> `soundSource`, `soundSourceOther`, `soundSourceSubtype`, and
+> `soundSourceSubtypeOther` — identifying the kind of source material
+> that individual test's tracks are drawn from, following the same
+> raw-value-plus-free-text-fallback pattern already used by
+> `comparisonCategory`/`comparisonCategoryOther` at the `testSet.json`
+> root, but scoped per test object rather than per test set (see above
+> for why). This is a non-breaking, additive change — `formatVersion`
+> stays `2`. Although the reference `Blind Audio Test` application
+> currently always sets `soundSource` when creating a test, this
+> specification deliberately keeps all four fields OPTIONAL (rather
+> than adding `soundSource` to the test object's required fields):
+> making a newly introduced field required at the schema level would
+> retroactively invalidate every `.batest` file already produced under
+> v2.0/v2.1, which is exactly what "non-breaking, additive" rules out.
+> Files written by a v2.0 or v2.1 implementation (which omit all four
+> fields) remain fully valid under v2.2, and implementations reading a
+> test object without `soundSource` MUST treat it as "not specified"
+> rather than erroring.
 
 ### Field Placement and Overrides
 
@@ -865,7 +913,9 @@ object, or track object, per
 [Field Placement and Overrides](#field-placement-and-overrides)),
 `comparisonCategoryOther`, `comparisonSubcategory`,
 `comparisonSubcategoryOther`, `loudnessMatching`, `trackLengthMode`,
-each test object's `title` (new in v2.1), and, on each track object,
+each test object's `title` (new in v2.1), each test object's
+`soundSource`, `soundSourceOther`, `soundSourceSubtype`, and
+`soundSourceSubtypeOther` (new in v2.2), and, on each track object,
 `manufacturer`, `model`, `manufacturerOther`, `modelOther`, `notes`,
 and `integratedLufs`.
 
