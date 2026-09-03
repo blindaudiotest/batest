@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.4
-**Status:** Stable — non-breaking, additive revision of v2.3
+**Version:** 2.5
+**Status:** Stable — non-breaking, additive revision of v2.4
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,11 +11,12 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.4, a non-breaking,
-> additive revision of v2.0/v2.1/v2.2/v2.3 (`formatVersion` remains `2`;
-> see [Top-Level Fields](#top-level-fields) and [testTypeConfig](#testtypeconfig)
-> for what's new). Files produced by a v2.0, v2.1, v2.2, or v2.3
-> implementation remain fully valid under v2.4. The v1.0 specification
+> **v1.0 users:** This document describes v2.5, a non-breaking,
+> additive revision of v2.0/v2.1/v2.2/v2.3/v2.4 (`formatVersion` remains
+> `2`; see [Top-Level Fields](#top-level-fields),
+> [testTypeConfig](#testtypeconfig), and [swappedSetup](#swappedsetup)
+> for what's new). Files produced by a v2.0, v2.1, v2.2, v2.3, or v2.4
+> implementation remain fully valid under v2.5. The v1.0 specification
 > (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
@@ -38,6 +39,7 @@ document are to be interpreted as described in RFC 2119.
    7. [Track Object Schema](#track-object-schema)
    8. [Format Conversion Rule](#format-conversion-rule)
    9. [testTypeConfig](#testtypeconfig)
+   10. [swappedSetup](#swappedsetup)
 7. [Assets](#assets)
 8. [Resources](#resources)
 9. [Test Results](#test-results)
@@ -365,6 +367,8 @@ entirely when empty, per the
 - `trackLengthMode` — see [trackLengthMode](#tracklengthmode).
 - `assets` — OPTIONAL, test-specific assets. See
   [Assets](#assets) and [Field Placement and Overrides](#field-placement-and-overrides).
+- `swappedSetup` — OPTIONAL. See [swappedSetup](#swappedsetup). Only
+  valid when `testType` is `"ab"` or `"abx-then-ab"`.
 - `testTypeConfig` — see [testTypeConfig](#testtypeconfig). REQUIRED.
 
 > **v2.1 change:** each test object gained a new OPTIONAL `title`
@@ -394,6 +398,18 @@ entirely when empty, per the
 > fields) remain fully valid under v2.2, and implementations reading a
 > test object without `soundSource` MUST treat it as "not specified"
 > rather than erroring.
+
+> **v2.5 change:** each test object gained a new OPTIONAL
+> `swappedSetup` field, letting an `"ab"` or `"abx-then-ab"` test object
+> declare a second, position-swapped physical setup for its A/B
+> comparison, to reduce the influence of position-dependent bias (e.g.
+> swapped microphone assignment). See [swappedSetup](#swappedsetup) for
+> the full field description. This is a non-breaking, additive change —
+> `formatVersion` stays `2`. Files written by a v2.0–v2.4 implementation
+> (which omit this field) remain fully valid under v2.5; implementations
+> reading a test object without `swappedSetup` MUST treat it as "no
+> swapped setup recorded", the only state representable before this
+> field existed.
 
 ### Field Placement and Overrides
 
@@ -833,6 +849,97 @@ test type.
 > future version of this specification but are not yet defined. See
 > the project [README](README.md#roadmap) for status.
 
+### swappedSetup
+
+`swappedSetup` is an OPTIONAL field on a test object, describing a
+second, position-swapped physical recording/reproduction setup for that
+test's A/B comparison, used to reduce the influence of a
+position-dependent bias that has nothing to do with the actual items
+being compared. A common example is a microphone shootout where two
+microphones each feed a different preamp: if Mic 1 always feeds Preamp
+A and Mic 2 always feeds Preamp B, a listener's judgment of "Preamp A
+vs. Preamp B" is confounded with "Mic 1 vs. Mic 2" and, more generally,
+with the microphones' physical positions in the room. Recording a
+second pass with the microphones' positions swapped (Mic 2 → Preamp A,
+Mic 1 → Preamp B) and presenting both passes lets a listener's judgment
+be checked for consistency independent of which physical position fed
+which compared item.
+
+```json
+{
+  "testId": 0,
+  "testType": "ab",
+  "tracks": [
+    { "trackId": 0, "filename": "track1.flac", "...": "Preamp A, Mic 1" },
+    { "trackId": 1, "filename": "track2.flac", "...": "Preamp B, Mic 2" }
+  ],
+  "swappedSetup": {
+    "tracks": [
+      { "trackId": 0, "filename": "track1b.flac", "...": "Preamp A, Mic 2" },
+      { "trackId": 1, "filename": "track2b.flac", "...": "Preamp B, Mic 1" }
+    ]
+  }
+}
+```
+
+- `tracks` — an array of track objects, following the same
+  [Track Object Schema](#track-object-schema) as the sibling `tracks[]`
+  array on the same test object. REQUIRED (`swappedSetup`, if present
+  at all, MUST contain a non-empty `tracks` array — there is no
+  "present but empty" state; the whole `swappedSetup` key is omitted
+  instead, per the [Schema Hygiene Convention](#schema-hygiene-convention)).
+
+The following rules govern `swappedSetup`:
+
+- `swappedSetup` MUST only be present on a test object whose `testType`
+  is `"ab"` or `"abx-then-ab"`. It MUST NOT be present for `"abx"`,
+  `"ranking"`, or `"rating"` test objects, since the concept of a single
+  paired A/B position swap does not apply to those test types as
+  specified.
+- On an `"abx-then-ab"` test object, `swappedSetup` applies **only** to
+  that procedure's A/B phase. The preceding A/B/X identification phase
+  MUST use only the test object's regular `tracks[]` array, unswapped,
+  exactly as it would if `swappedSetup` were absent. Implementations
+  MUST NOT substitute or mix in `swappedSetup.tracks[]` during the A/B/X
+  phase.
+- `swappedSetup.tracks[]` MUST contain exactly as many track objects as
+  the sibling `tracks[]` array on the same test object — a 1:1 coupling
+  by array position, not by a separate ID reference. The track at
+  `swappedSetup.tracks[i]` is the position-swapped counterpart of the
+  track at `tracks[i]`, for every valid index `i`. This mirrors the
+  existing positional convention already used for `trackId` (see
+  [Identifier Stability](#identifier-stability)) rather than introducing
+  a new cross-referencing identifier scheme.
+- For every index `i`, if `tracks[i]` has a `manufacturer`/`model` (or
+  `manufacturerOther`/`modelOther`) pair identifying the item under
+  comparison (e.g. the preamp in the example above), then
+  `swappedSetup.tracks[i]` MUST carry the same `manufacturer`/`model`
+  (or `manufacturerOther`/`modelOther`) pair — the swap changes the
+  supporting/position setup (e.g. which microphone feeds it), not
+  *which* item is being compared at that position. Fields that describe
+  the swapped, position-dependent part of the setup (e.g.
+  `recording.signalChain`) are expected to legitimately differ between
+  `tracks[i]` and `swappedSetup.tracks[i]`; that is the entire point of
+  the feature.
+- `swappedSetup.tracks[].trackId` follows the same rule as any other
+  `tracks[]` array per the [Track Object Schema](#track-object-schema):
+  zero-based, positional within `swappedSetup.tracks`, and unique within
+  that array. It is a separate numbering scope from the sibling
+  `tracks[]` array's `trackId`s (both arrays independently start at
+  `0`).
+- Playback/randomization semantics for how `swappedSetup.tracks[]` is
+  presented to the listener during the A/B phase (e.g. as an additional
+  round, or interleaved with the unswapped round) are
+  implementation-defined; this specification only defines the data
+  shape and the identity/1:1-coupling rules above.
+
+This specification deliberately does not define a mechanically
+validated (JSON Schema) enforcement of the 1:1 track-count coupling or
+the `manufacturer`/`model` matching rule above — both are normative
+prose requirements only, consistent with how this specification already
+treats the positional `trackId`/`testId` rules elsewhere (see
+[Identifier Stability](#identifier-stability)).
+
 ## Assets
 
 Assets are optional local files that help explain or document the
@@ -972,7 +1079,8 @@ each test object's `title` (new in v2.1), each test object's
 `soundSource`, `soundSourceOther`, `soundSourceSubtype`, and
 `soundSourceSubtypeOther` (new in v2.2), `poolAbxAcrossTests`
 (testSet.json root, new in v2.3), `requiresSuccessfulAbx`
-(`testTypeConfig.abx-then-ab`, new in v2.4), and, on each track object,
+(`testTypeConfig.abx-then-ab`, new in v2.4), `swappedSetup` (each test
+object, new in v2.5), and, on each track object,
 `manufacturer`, `model`, `manufacturerOther`, `modelOther`, `notes`,
 and `integratedLufs`.
 

@@ -166,6 +166,7 @@
           "description": "Omitted when all of this test's tracks have the same length, or there is only one track. Never present when testType is 'rating'."
         },
         "assets": { "$ref": "#/$defs/assets" },
+        "swappedSetup": { "$ref": "#/$defs/swappedSetup" },
         "testTypeConfig": { "$ref": "#/$defs/testTypeConfig" }
       },
       "allOf": [
@@ -177,6 +178,16 @@
           "then": {
             "properties": {
               "testTypeConfig": { "type": "object", "required": ["ab"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["swappedSetup"]
+          },
+          "then": {
+            "properties": {
+              "testType": { "enum": ["ab", "abx-then-ab"] }
             }
           }
         },
@@ -300,6 +311,18 @@
         "tags": {
           "type": "array",
           "items": { "type": "string" }
+        }
+      }
+    },
+    "swappedSetup": {
+      "type": "object",
+      "description": "OPTIONAL, test-object level only. A second physical setup where the compared items' positions are swapped (e.g. swapped microphone assignment) to reduce position-dependent bias. Only valid when testType is 'ab' or 'abx-then-ab' (where it applies only to that test object's A/B phase, not its A/B/X identification phase). See SPEC.md's 'swappedSetup' section for the positional 1:1 coupling with the sibling tracks[] array, which is normative prose only and not mechanically validated by this schema. New in v2.5.",
+      "additionalProperties": false,
+      "required": ["tracks"],
+      "properties": {
+        "tracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/track" }
         }
       }
     },

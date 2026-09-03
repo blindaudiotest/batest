@@ -11,6 +11,35 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.5] - 2026-09-03
+
+### Added
+
+- Added an OPTIONAL `swappedSetup` field to each test object in
+  `testSet.json`'s `test` array. `swappedSetup` describes a second,
+  position-swapped physical setup for that test's A/B comparison (e.g.
+  swapped microphone-to-preamp assignment), used to reduce the
+  influence of a position-dependent bias unrelated to the items
+  actually being compared. It is only valid when that test object's
+  `testType` is `"ab"` or `"abx-then-ab"`; on an `"abx-then-ab"` test
+  object it applies only to the A/B phase, never the preceding A/B/X
+  identification phase, which continues to use only the regular
+  `tracks[]` array unchanged. `swappedSetup.tracks[]` follows the same
+  Track Object Schema as the sibling `tracks[]` array and is coupled to
+  it 1:1 by array position (not by a separate ID reference), mirroring
+  the format's existing positional `trackId`/`testId` convention. This
+  1:1 coupling, and the accompanying rule that matched
+  `manufacturer`/`model` pairs be preserved between a track and its
+  swapped counterpart, are documented as normative SPEC.md prose only
+  and are deliberately not mechanically enforced by the JSON Schema —
+  consistent with how the existing positional `trackId` rule is
+  handled. The key is omitted entirely when no swapped setup was
+  recorded, per the existing Schema Hygiene Convention.
+- This is a non-breaking, additive change: `formatVersion` remains `2`,
+  and files written by a v2.0, v2.1, v2.2, v2.3, or v2.4 implementation
+  (which omit this field) remain fully valid under v2.5 and are
+  correctly interpreted as having no swapped setup recorded.
+
 ## [2.4] - 2026-09-02
 
 ### Added
