@@ -56,6 +56,10 @@
       "description": "Reserved for future fields; no fields defined yet. Omitted entirely when empty."
     },
     "assets": { "$ref": "#/$defs/assets" },
+    "poolAbxAcrossTests": {
+      "type": "boolean",
+      "description": "OPTIONAL. When true, all A/B/X test procedures within this test set (testTypeConfig.abx, and the A/B/X phase of testTypeConfig.abx-then-ab) are evaluated together as a single pooled result rather than separately per test object. Omitted entirely when false (the default and the only behavior definable before this field existed: separate per-test evaluation), per the Schema Hygiene Convention. New in v2.3."
+    },
     "resources": {
       "type": "array",
       "description": "External references not embedded in the container. Omitted entirely when empty.",
@@ -464,7 +468,11 @@
           "required": ["abxRounds", "abRounds"],
           "properties": {
             "abxRounds": { "type": "integer", "minimum": 1 },
-            "abRounds": { "type": "integer", "minimum": 1 }
+            "abRounds": { "type": "integer", "minimum": 1 },
+            "requiresSuccessfulAbx": {
+              "type": "boolean",
+              "description": "OPTIONAL. When true, the A/B phase only runs after the preceding A/B/X phase was completed successfully; when false (or omitted), the A/B phase always runs regardless of A/B/X outcome. Omitted entirely when false, per the Schema Hygiene Convention — this is also the only behavior definable before this field existed, so files that predate it remain correctly interpreted as 'always run'. New in v2.4."
+            }
           }
         },
         "ranking": {

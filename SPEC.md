@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.2
-**Status:** Stable — non-breaking, additive revision of v2.1
+**Version:** 2.4
+**Status:** Stable — non-breaking, additive revision of v2.3
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,11 +11,12 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.2, a non-breaking,
-> additive revision of v2.0/v2.1 (`formatVersion` remains `2`; see
-> [Test Object Schema](#test-object-schema) for what's new). Files
-> produced by a v2.0 or v2.1 implementation remain fully valid under
-> v2.2. The v1.0 specification (single-test `test.json` structure)
+> **v1.0 users:** This document describes v2.4, a non-breaking,
+> additive revision of v2.0/v2.1/v2.2/v2.3 (`formatVersion` remains `2`;
+> see [Top-Level Fields](#top-level-fields) and [testTypeConfig](#testtypeconfig)
+> for what's new). Files produced by a v2.0, v2.1, v2.2, or v2.3
+> implementation remain fully valid under v2.4. The v1.0 specification
+> (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
 > summary of what changed since v1.
@@ -241,11 +242,39 @@ set.
   Both are OPTIONAL and omitted entirely when they hold no content.
 - `assets` — OPTIONAL, test-set-wide assets. See
   [Assets](#assets) and [Field Placement and Overrides](#field-placement-and-overrides).
+- `poolAbxAcrossTests` — OPTIONAL. When `true`, all A/B/X test
+  procedures within this test set (every test object whose
+  `testTypeConfig` is `abx`, and the A/B/X phase of every
+  `abx-then-ab` test object) are evaluated together as a single
+  pooled result, rather than each being evaluated separately. The key
+  is omitted entirely when `false`, per the
+  [Schema Hygiene Convention](#schema-hygiene-convention) — separate
+  per-test evaluation is the default, and was the only behavior
+  definable before this field existed, so omitting the key preserves
+  that existing behavior for files that predate it. *(New in v2.3 —
+  see the note below.)*
 - `resources` — see [Resources](#resources).
 
 `recording` is **not** a valid field at the `testSet.json` root level
 in v2 — it is only meaningful at the test-object and track-object
 level. See [Field Placement and Overrides](#field-placement-and-overrides).
+
+> **v2.3 change:** `testSet.json` gained a new OPTIONAL root-level
+> field, `poolAbxAcrossTests`, allowing a test set's A/B/X test
+> procedures to be evaluated together instead of separately. This is a
+> non-breaking, additive change — `formatVersion` stays `2`. The field
+> is deliberately OPTIONAL rather than required, and its key is
+> omitted entirely (never written as an explicit `false`) whenever
+> pooling is not enabled, so that files written by a v2.0–v2.2
+> implementation (which omit this field) remain fully valid under
+> v2.3 and are correctly interpreted as using separate, per-test
+> evaluation — the only behavior that existed before this field was
+> introduced. This is the first plain boolean field in this
+> specification; unlike `loudnessMatching` (an object whose mere
+> *presence* signals "enabled"), `poolAbxAcrossTests` carries its
+> boolean value directly, but follows the same underlying convention:
+> the default (`false`) is represented by omission, and only the
+> non-default value (`true`) is ever written explicitly.
 
 ### Test Object Schema
 
@@ -670,10 +699,22 @@ own independent round count, so it uses two fields instead of a single
 "testTypeConfig": {
   "abx-then-ab": {
     "abxRounds": 8,
-    "abRounds": 2
+    "abRounds": 2,
+    "requiresSuccessfulAbx": true
   }
 }
 ```
+
+`requiresSuccessfulAbx` is an OPTIONAL boolean, scoped to this
+`abx-then-ab` procedure. When `true`, the A/B phase only runs after the
+listener completed the preceding A/B/X phase successfully; when
+`false`, the A/B phase always runs, regardless of the A/B/X outcome —
+this was the only behavior available before this field existed. The
+key is omitted entirely when `false`, per the
+[Schema Hygiene Convention](#schema-hygiene-convention); files written
+by a v2.0–v2.3 implementation (which omit this field) remain fully
+valid under v2.4 and are correctly interpreted as "always run".
+*(New in v2.4 — see the note below.)*
 
 **Ranking**:
 
@@ -776,6 +817,17 @@ test type.
     integer in the range `[-scaleRadius, +scaleRadius]` (e.g. `-3` =
     leaning toward `negativeLabel`, `0` = `centerLabel`, `+2` =
     leaning toward `positiveLabel`).
+
+> **v2.4 change:** `testTypeConfig`'s `abx-then-ab` object gained a new
+> OPTIONAL field, `requiresSuccessfulAbx`, letting an A/B/X→A/B
+> procedure be configured so the A/B phase is gated on a successful
+> preceding A/B/X phase, instead of always running unconditionally.
+> This is a non-breaking, additive change — `formatVersion` stays `2`.
+> The field's key is omitted entirely (never written as an explicit
+> `false`) whenever it is not enabled, so that files written by a
+> v2.0–v2.3 implementation (which omit this field) remain fully valid
+> under v2.4 and are correctly interpreted as "always run" — the only
+> behavior that existed before this field was introduced.
 
 > Additional test types, such as MUSHRA, are under consideration for a
 > future version of this specification but are not yet defined. See
@@ -899,7 +951,10 @@ as "empty" depends on the field's type: for object-typed fields it
 means an empty object or no meaningful sub-fields set; for array-typed
 fields it means an empty array; for string-typed fields it means no
 value present; for number-typed fields it means no measurement or
-value available.
+value available; for boolean-typed fields it means the field's
+documented default value (so far, always `false`) — only the
+non-default value is ever written explicitly, and the key is omitted
+rather than writing the default out.
 
 Implementations MUST accept both the omitted-key form and an explicit
 `null` (or empty `{}`/`[]`) for these fields, since files exported by
@@ -915,7 +970,9 @@ object, or track object, per
 `comparisonSubcategoryOther`, `loudnessMatching`, `trackLengthMode`,
 each test object's `title` (new in v2.1), each test object's
 `soundSource`, `soundSourceOther`, `soundSourceSubtype`, and
-`soundSourceSubtypeOther` (new in v2.2), and, on each track object,
+`soundSourceSubtypeOther` (new in v2.2), `poolAbxAcrossTests`
+(testSet.json root, new in v2.3), `requiresSuccessfulAbx`
+(`testTypeConfig.abx-then-ab`, new in v2.4), and, on each track object,
 `manufacturer`, `model`, `manufacturerOther`, `modelOther`, `notes`,
 and `integratedLufs`.
 

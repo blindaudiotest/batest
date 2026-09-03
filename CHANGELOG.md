@@ -11,6 +11,40 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.4] - 2026-09-02
+
+### Added
+
+- Added an OPTIONAL `requiresSuccessfulAbx` field to
+  `testTypeConfig.abx-then-ab` (alongside `abxRounds`/`abRounds`).
+  When `true`, an A/B/X→A/B test procedure's A/B phase only runs after
+  the listener completed the preceding A/B/X phase successfully; when
+  `false` (or omitted), the A/B phase always runs, matching the only
+  behavior available before this field existed. The key is omitted
+  entirely when `false`, per the existing Schema Hygiene Convention.
+- This is a non-breaking, additive change: `formatVersion` remains
+  `2`, and files written by a v2.0, v2.1, v2.2, or v2.3 implementation
+  (which omit this field) remain fully valid under v2.4 and are
+  correctly interpreted as "always run".
+
+## [2.3] - 2026-09-02
+
+### Added
+
+- Added an OPTIONAL `poolAbxAcrossTests` field to `testSet.json`'s
+  root level. When `true`, all A/B/X test procedures within the test
+  set (every `abx` test object, and the A/B/X phase of every
+  `abx-then-ab` test object) are evaluated together as a single pooled
+  result rather than each being evaluated separately. This is the
+  first plain boolean field in the specification; it follows the
+  existing Schema Hygiene Convention by omitting the key entirely
+  when `false` (the default, and the only behavior definable before
+  this field existed) rather than writing the default out explicitly.
+- This is a non-breaking, additive change: `formatVersion` remains
+  `2`, and files written by a v2.0, v2.1, or v2.2 implementation
+  (which omit this field) remain fully valid under v2.3 and are
+  correctly interpreted as using separate, per-test ABX evaluation.
+
 ## [2.2] - 2026-08-26
 
 ### Added

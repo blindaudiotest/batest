@@ -26,7 +26,7 @@ JSON documents are in [`schema/`](schema/):
 ## Status
 
 The specification is versioned independently of any implementation.
-The current version is **v2.2**, a non-breaking, additive revision
+The current version is **v2.4**, a non-breaking, additive revision
 within the v2 line (v2.0 itself was a breaking revision of v1). **v1**
 remains available for anyone still implementing against it, via this
 repository's `v1.0` git tag/release. See [CHANGELOG.md](CHANGELOG.md)
