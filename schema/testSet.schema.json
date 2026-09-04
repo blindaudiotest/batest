@@ -379,8 +379,16 @@
           "type": "string",
           "description": "Name of the file as originally uploaded by the user. Display purposes only."
         },
-        "manufacturer": { "type": "string" },
-        "model": { "type": "string" },
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable, human-readable manufacturer name for the item under comparison (e.g. 'Neumann') — never a database ID, internal slug, or other instance-dependent identifier. Omitted entirely when not applicable. The sentinel value 'others' pairs with manufacturerOther."
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable, human-readable model name for the item under comparison (e.g. 'U87') — never a database ID, internal slug, or other instance-dependent identifier. Omitted entirely when not applicable. The sentinel value 'others' pairs with modelOther."
+        },
         "manufacturerOther": { "type": "string" },
         "modelOther": { "type": "string" },
         "label": {

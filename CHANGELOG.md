@@ -11,6 +11,33 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.6] - 2026-09-04
+
+### Changed
+
+- Clarified that a track object's `manufacturer` / `model` fields
+  (`testSet.json`, `test[].tracks[]`) MUST hold the stable,
+  human-readable name of the item under comparison (e.g. `"Neumann"` /
+  `"U87"`) for a known, non-free-text selection — never a database ID,
+  internal slug, or other instance-dependent identifier tied to the
+  application/database instance that produced the file. Added an
+  explicit example for the free-text "Others" case, where
+  `manufacturer`/`model` instead carry the raw sentinel value
+  `"others"` and the actual free-text name lives in
+  `manufacturerOther`/`modelOther`, mirroring the existing
+  `comparisonCategory`/`comparisonCategoryOther` pattern.
+- Added `minLength: 1` to `manufacturer` and `model` in
+  `schema/testSet.schema.json`'s track object definition, matching the
+  clarified prose (an empty string is never a valid resolved name).
+- This is a non-breaking clarification: `formatVersion` remains `2`,
+  no field was added, removed, or changed in shape, and files written
+  by any v2.0–v2.5 implementation remain fully valid under v2.6. This
+  specification does not define a migration or backfill step for
+  `.batest` files that predate this clarification and may contain a
+  raw identifier in these fields instead of a human-readable name;
+  consuming applications handle any resulting display fallback on
+  their own.
+
 ## [2.5] - 2026-09-03
 
 ### Added

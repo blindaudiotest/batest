@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.5
-**Status:** Stable — non-breaking, additive revision of v2.4
+**Version:** 2.6
+**Status:** Stable — non-breaking, clarifying revision of v2.5
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,13 +11,13 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.5, a non-breaking,
-> additive revision of v2.0/v2.1/v2.2/v2.3/v2.4 (`formatVersion` remains
-> `2`; see [Top-Level Fields](#top-level-fields),
-> [testTypeConfig](#testtypeconfig), and [swappedSetup](#swappedsetup)
-> for what's new). Files produced by a v2.0, v2.1, v2.2, v2.3, or v2.4
-> implementation remain fully valid under v2.5. The v1.0 specification
-> (single-test `test.json` structure)
+> **v1.0 users:** This document describes v2.6, a non-breaking revision
+> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5 (`formatVersion` remains `2`; see
+> [Top-Level Fields](#top-level-fields), [testTypeConfig](#testtypeconfig),
+> [swappedSetup](#swappedsetup), and [Track Object Schema](#track-object-schema)
+> for what's new/clarified). Files produced by a v2.0, v2.1, v2.2, v2.3,
+> v2.4, or v2.5 implementation remain fully valid under v2.6. The v1.0
+> specification (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
 > summary of what changed since v1.
@@ -592,8 +592,8 @@ and multitrack Ranking tests alike.
   "trackId": 0,
   "filename": "track1.flac",
   "originalFilename": "Vocal.wav",
-  "manufacturer": "neumann",
-  "model": "u87",
+  "manufacturer": "Neumann",
+  "model": "U87",
   "label": null,
   "recording": {
     "signalChain": [
@@ -627,10 +627,25 @@ and multitrack Ranking tests alike.
   or file resolution inside the container. REQUIRED.
 - `manufacturer` / `model` — OPTIONAL, omitted entirely for
   categories where they stay optional and have no value (e.g.
-  Mixes/Masters, Codecs).
+  Mixes/Masters, Codecs). For a known (non-free-text) selection, each
+  MUST be the stable, human-readable name of the item under comparison
+  (e.g. `"Neumann"` / `"U87"`) — **never** a database ID, internal
+  slug, or other instance-dependent identifier that would not remain
+  meaningful outside the application/database instance that produced
+  the file; unlike `comparisonCategory`, there is no separate
+  "raw value in `testSet.json`, resolved copy in `manifest.json`" split
+  needed here — the resolved name is written directly into
+  `testSet.json` itself. The one exception is the free-text "Others"
+  case (see `manufacturerOther`/`modelOther` below and the example
+  further down), where `manufacturer`/`model` instead carry the raw
+  sentinel value `"others"`, mirroring `comparisonCategory`'s own
+  raw/other split.
 - `manufacturerOther` / `modelOther` — hold the free-text value when
-  `"others"` was selected for manufacturer or model respectively.
-  Omitted otherwise.
+  the sentinel value `"others"` was selected for manufacturer or model
+  respectively (mirroring `comparisonCategory`/`comparisonCategoryOther`'s
+  pattern — note this sentinel is `"others"`, plural, like
+  `comparisonCategory`'s and unlike `soundSource`'s singular `"other"`).
+  Omitted otherwise. See the example below.
 - `label` — an OPTIONAL, freely chosen display name for the track
   (e.g. `"Take 1 - close mic"`), independent of its automatic
   `trackId`/ordering. This field MUST always be present; it is `null`
@@ -655,6 +670,43 @@ and multitrack Ranking tests alike.
   LUFS. OPTIONAL; omitted entirely when loudness matching was not run
   for this test (i.e. the test object's `loudnessMatching` block is
   absent), since no measurement is available in that case.
+
+*Example — a track with a free-text "Others" manufacturer/model:*
+
+```json
+{
+  "trackId": 0,
+  "filename": "track1.flac",
+  "originalFilename": "Vocal.wav",
+  "manufacturer": "others",
+  "model": "others",
+  "manufacturerOther": "Acme Custom Mic Co.",
+  "modelOther": "Prototype X1"
+}
+```
+
+A consuming implementation that wants a single display string for this
+track falls back to `manufacturerOther`/`modelOther` whenever
+`manufacturer`/`model` equal `"others"` — the same pattern already used
+for `comparisonCategory` when producing `manifest.json`'s resolved
+`comparisonCategory` value (and how this track's data ends up
+represented, already resolved, in `manifest.json`'s `models` array).
+
+> **v2.6 change:** clarified that a track object's `manufacturer` /
+> `model` fields MUST hold the stable, human-readable name of the item
+> under comparison rather than a database ID, internal slug, or other
+> instance-dependent identifier, and added `minLength: 1` to both
+> fields in `schema/testSet.schema.json`. This is a non-breaking
+> clarification of existing, previously underspecified behavior —
+> `formatVersion` stays `2`, and no field was added, removed, or
+> changed in shape. Files already correctly writing human-readable
+> names for these fields are unaffected. Files from an implementation
+> that (incorrectly, per this clarification) wrote a raw ID into these
+> fields remain structurally valid `.batest` files under this
+> specification's schema either way — the affected consuming
+> application handles any resulting display fallback on its own; no
+> migration or backfill of previously written `.batest` files is
+> defined or required by this specification.
 
 ### Format Conversion Rule
 
