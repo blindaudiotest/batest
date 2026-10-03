@@ -43,6 +43,33 @@ jobs:
       - name: Install ajv-cli
         run: npm install --no-save ajv-cli@5
 
+      - name: Validate unpacked example directories
+        run: |
+          set -e
+
+          shopt -s nullglob
+          dirs=(examples/*/)
+
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "No unpacked example directories found, skipping."
+            exit 0
+          fi
+
+          status=0
+          for d in "${dirs[@]}"; do
+            d="${d%/}"
+            if [ -f "$d/manifest.json" ]; then
+              echo "Validating $d/manifest.json ..."
+              npx ajv-cli validate --spec=draft2020 -s schema/manifest.schema.json -d "$d/manifest.json" || status=1
+            fi
+            if [ -f "$d/testSet.json" ]; then
+              echo "Validating $d/testSet.json ..."
+              npx ajv-cli validate --spec=draft2020 -s schema/testSet.schema.json -d "$d/testSet.json" || status=1
+            fi
+          done
+
+          exit $status
+
       - name: Find and validate example .batest files
         run: |
           set -e

@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.6
-**Status:** Stable — non-breaking, clarifying revision of v2.5
+**Version:** 2.7
+**Status:** Draft — non-breaking, additive revision of v2.6
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,12 +11,13 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.6, a non-breaking revision
-> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5 (`formatVersion` remains `2`; see
+> **v1.0 users:** This document describes v2.7, a non-breaking revision
+> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6 (`formatVersion` remains `2`; see
 > [Top-Level Fields](#top-level-fields), [testTypeConfig](#testtypeconfig),
-> [swappedSetup](#swappedsetup), and [Track Object Schema](#track-object-schema)
-> for what's new/clarified). Files produced by a v2.0, v2.1, v2.2, v2.3,
-> v2.4, or v2.5 implementation remain fully valid under v2.6. The v1.0
+> [swappedSetup](#swappedsetup), [trackOption](#trackoption), and
+> [Track Object Schema](#track-object-schema) for what's new/clarified).
+> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, or v2.6
+> implementation remain fully valid under v2.7. The v1.0
 > specification (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
@@ -40,6 +41,7 @@ document are to be interpreted as described in RFC 2119.
    8. [Format Conversion Rule](#format-conversion-rule)
    9. [testTypeConfig](#testtypeconfig)
    10. [swappedSetup](#swappedsetup)
+   11. [trackOption](#trackoption)
 7. [Assets](#assets)
 8. [Resources](#resources)
 9. [Test Results](#test-results)
@@ -369,6 +371,10 @@ entirely when empty, per the
   [Assets](#assets) and [Field Placement and Overrides](#field-placement-and-overrides).
 - `swappedSetup` — OPTIONAL. See [swappedSetup](#swappedsetup). Only
   valid when `testType` is `"ab"` or `"abx-then-ab"`.
+- `trackOption` — OPTIONAL. Names which track-level metadata category
+  (`"distance"`, `"highPass"`, or `"polarPattern"`) varies between this
+  test's tracks. The key is omitted entirely when no track option
+  applies. See [trackOption](#trackoption). *(New in v2.7.)*
 - `testTypeConfig` — see [testTypeConfig](#testtypeconfig). REQUIRED.
 
 > **v2.1 change:** each test object gained a new OPTIONAL `title`
@@ -411,6 +417,19 @@ entirely when empty, per the
 > swapped setup recorded", the only state representable before this
 > field existed.
 
+> **v2.7 change:** each test object gained a new OPTIONAL `trackOption`
+> field, naming which track-level metadata category (recording distance,
+> high-pass filter, or polar pattern) varies between that test's tracks,
+> so that one test can compare several recording variants of the same
+> item under comparison (e.g. KM 184 @ 8 cm, KM 184 @ 16 cm, CC8 @ 8 cm,
+> CC8 @ 16 cm). The variant values themselves live only on the track
+> objects; see [trackOption](#trackoption) and
+> [Track Object Schema](#track-object-schema). This is a non-breaking,
+> additive change — `formatVersion` stays `2`. Files written by a
+> v2.0–v2.6 implementation (which omit this field) remain fully valid
+> under v2.7; implementations reading a test object without
+> `trackOption` MUST treat it as "no track option".
+
 ### Field Placement and Overrides
 
 v2 introduces multiple valid nesting levels for `content`, `recording`,
@@ -423,6 +442,15 @@ level. Each field's valid levels are:
 | `content`   | ✅                  | ✅           | ✅             |
 | `recording` | ❌                  | ✅           | ✅             |
 | `assets`    | ✅                  | ✅           | ❌             |
+| `itemIndex`, `distanceMm`, `highPass`, `polarPattern` | ❌ | ❌ | ✅ (track only, no override) |
+
+`itemIndex`, `distanceMm`, `highPass`, and `polarPattern` (new in v2.7)
+exist **only** on track objects (including `swappedSetup.tracks[]`) and
+are deliberately **not** part of `recording`: they take part in no
+override or merge rule, there is no test-level default for them, and a
+track that omits one of them simply has no value for it — it never
+inherits a value from its test object. See
+[Track Object Schema](#track-object-schema).
 
 All occurrences are OPTIONAL and, per the
 [Schema Hygiene Convention](#schema-hygiene-convention), the key is
@@ -655,6 +683,48 @@ and multitrack Ranking tests alike.
 - `content` / `recording` — OPTIONAL track-level delta objects; see
   [Field Placement and Overrides](#field-placement-and-overrides).
   Omitted entirely when there is nothing track-specific to add.
+- `itemIndex` — an OPTIONAL, structural grouping key (integer, `>= 0`)
+  identifying *which item under comparison* this track belongs to,
+  scoped to the **whole test set**, not to the parent test object:
+  every track carrying the same `itemIndex` — in any test object, and
+  in any `swappedSetup.tracks[]` — refers to the same item. This allows
+  several tracks of the same item within one test (e.g. the same
+  microphone recorded at two distances), and distinguishes items that
+  happen to share a name (e.g. two units of the same model, or two
+  items without any `manufacturer`/`model`). The key is omitted
+  entirely when not used. *(New in v2.7.)* The following rules apply:
+  - Values MUST be assigned densely starting at `0`: the set of
+    `itemIndex` values used in a test set is exactly `0 … n-1`.
+  - Either every track in the test set (including every
+    `swappedSetup.tracks[]` entry) carries `itemIndex`, or none does.
+  - All tracks with the same `itemIndex` MUST carry identical
+    `manufacturer`, `model`, `manufacturerOther`, and `modelOther`
+    values (including identical absence).
+  - `itemIndex` is unrelated to `trackId` and is not a position in any
+    array.
+  - When `itemIndex` is absent (as in every file written before v2.7),
+    how tracks map to items under comparison remains
+    implementation-defined, as before.
+- `distanceMm` — the OPTIONAL recording distance of this track, as an
+  integer number of **millimetres**, `>= 1` (e.g. `80` for 8 cm).
+  Omitted entirely when not specified. *(New in v2.7.)*
+- `highPass` — OPTIONAL. Describes a high-pass filter applied in the
+  recording chain of this track, with exactly three states:
+  - key omitted — not specified (nothing is known about a high-pass
+    filter; this MUST NOT be interpreted as "off");
+  - `{ "enabled": false }` — explicitly off;
+  - `{ "enabled": true, "frequencyHz": 80 }` — on, with its cutoff
+    frequency as an integer number of Hz, `>= 1`. `frequencyHz` is
+    REQUIRED when `enabled` is `true` and MUST NOT be present when
+    `enabled` is `false`.
+
+  No other properties are allowed in the object. A legacy explicit
+  `null` (see [Schema Hygiene Convention](#schema-hygiene-convention))
+  MUST be read as "not specified", never as "off". *(New in v2.7.)*
+- `polarPattern` — the OPTIONAL polar pattern used for this track. One
+  of `"cardioid"`, `"omni"`, `"figure-8"`, `"supercardioid"`,
+  `"hypercardioid"`. Omitted entirely when not specified. *(New in
+  v2.7.)*
 - `originalFormat` — the format of the file as originally uploaded.
   REQUIRED.
 - `storedFormat` — the format actually present in `required/` inside
@@ -692,6 +762,51 @@ for `comparisonCategory` when producing `manifest.json`'s resolved
 `comparisonCategory` value (and how this track's data ends up
 represented, already resolved, in `manifest.json`'s `models` array).
 
+*Example — two tracks of the same item under comparison, recorded at
+different distances (v2.7):*
+
+```json
+[
+  {
+    "trackId": 0,
+    "filename": "track1.flac",
+    "originalFilename": "KM184_8cm.wav",
+    "manufacturer": "Neumann",
+    "model": "KM 184",
+    "label": null,
+    "itemIndex": 0,
+    "distanceMm": 80,
+    "highPass": { "enabled": false },
+    "polarPattern": "cardioid",
+    "originalFormat": "wav",
+    "storedFormat": "flac",
+    "originalSampleRate": 48000,
+    "originalBitDepth": 24,
+    "durationSeconds": 30.0
+  },
+  {
+    "trackId": 1,
+    "filename": "track2.flac",
+    "originalFilename": "KM184_16cm.wav",
+    "manufacturer": "Neumann",
+    "model": "KM 184",
+    "label": null,
+    "itemIndex": 0,
+    "distanceMm": 160,
+    "highPass": { "enabled": true, "frequencyHz": 80 },
+    "originalFormat": "wav",
+    "storedFormat": "flac",
+    "originalSampleRate": 48000,
+    "originalBitDepth": 24,
+    "durationSeconds": 30.0
+  }
+]
+```
+
+The second track has no `polarPattern`. That means the value is not
+specified for that track; it is not inherited from the first track or
+from the test object.
+
 > **v2.6 change:** clarified that a track object's `manufacturer` /
 > `model` fields MUST hold the stable, human-readable name of the item
 > under comparison rather than a database ID, internal slug, or other
@@ -707,6 +822,16 @@ represented, already resolved, in `manifest.json`'s `models` array).
 > application handles any resulting display fallback on its own; no
 > migration or backfill of previously written `.batest` files is
 > defined or required by this specification.
+
+> **v2.7 change:** each track object gained four new OPTIONAL fields:
+> `itemIndex` (a test-set-wide grouping key for the item under
+> comparison, allowing several tracks of the same item per test),
+> `distanceMm`, `highPass` (three states), and `polarPattern`. All four
+> are track-only, outside `recording`, with no override or merge rule.
+> This is a non-breaking, additive change — `formatVersion` stays `2`.
+> Files written by a v2.0–v2.6 implementation (which omit all four
+> fields) remain fully valid under v2.7; implementations MUST treat an
+> absent field as "not specified".
 
 ### Format Conversion Rule
 
@@ -985,12 +1110,64 @@ The following rules govern `swappedSetup`:
   implementation-defined; this specification only defines the data
   shape and the identity/1:1-coupling rules above.
 
+- *(New in v2.7.)* If the tracks carry `itemIndex`, then
+  `swappedSetup.tracks[i]` MUST carry the same `itemIndex` as
+  `tracks[i]`. If the test object has a `trackOption`, then
+  `swappedSetup.tracks[i]` MUST carry the same value as `tracks[i]` in
+  the field named by `trackOption` (see [trackOption](#trackoption)).
+  The swap changes the physical position, not the recording variant.
+
 This specification deliberately does not define a mechanically
 validated (JSON Schema) enforcement of the 1:1 track-count coupling or
-the `manufacturer`/`model` matching rule above — both are normative
-prose requirements only, consistent with how this specification already
-treats the positional `trackId`/`testId` rules elsewhere (see
-[Identifier Stability](#identifier-stability)).
+the `manufacturer`/`model`, `itemIndex`, and variant matching rules
+above — all are normative prose requirements only, consistent with how
+this specification already treats the positional `trackId`/`testId`
+rules elsewhere (see [Identifier Stability](#identifier-stability)).
+
+### trackOption
+
+`trackOption` is an OPTIONAL string field on a test object *(new in
+v2.7)*. It names the one track-level metadata category that varies
+between the recording variants compared in this test. It only selects
+the category; the values themselves live exclusively on the track
+objects — there is no separate list of option values on the test
+object.
+
+| `trackOption`    | Track field read for each track |
+|------------------|---------------------------------|
+| `"distance"`     | `distanceMm`                    |
+| `"highPass"`     | `highPass`                      |
+| `"polarPattern"` | `polarPattern`                  |
+
+The key is omitted entirely when no track option applies. When it is
+present, the following rules apply to each track slot:
+
+- Every track in the test object's `tracks[]`, and every track in its
+  `swappedSetup.tracks[]` (if present), MUST carry the field named by
+  `trackOption`. This rule is enforced by the JSON Schema.
+- Within one test object's `tracks[]`, tracks with the same `itemIndex`
+  MUST have pairwise distinct values in that field: two tracks of the
+  same item in the same test must differ in the selected variant.
+  Values are compared structurally. For `highPass`,
+  `{ "enabled": false }` and `{ "enabled": true, "frequencyHz": 80 }`
+  are distinct values, as are two different `frequencyHz` values. The
+  same rule applies independently within `swappedSetup.tracks[]`.
+- For `swappedSetup`, the coupling rule in
+  [swappedSetup](#swappedsetup) applies.
+- There is **no** rectangular-grid requirement. Different items may
+  have different variants, or a different number of variants, within
+  the same test (e.g. KM 184 at 80 mm and 160 mm, CC8 at 80 mm only).
+- Track-level metadata fields not named by `trackOption` MAY also be
+  present on the same tracks; they are informational only for this
+  test.
+
+How the tracks of a test with variants are paired, ordered, or
+presented to the listener is implementation-defined, as with
+`swappedSetup`. This matters in particular for `"ab"`, `"abx"`, and
+`"abx-then-ab"`, which compare pairs. This specification only defines
+the data shape and the rules above. Apart from the "field is present"
+rule, these rules are normative prose only and are not mechanically
+validated by the JSON Schema.
 
 ## Assets
 
@@ -1132,9 +1309,17 @@ each test object's `title` (new in v2.1), each test object's
 `soundSourceSubtypeOther` (new in v2.2), `poolAbxAcrossTests`
 (testSet.json root, new in v2.3), `requiresSuccessfulAbx`
 (`testTypeConfig.abx-then-ab`, new in v2.4), `swappedSetup` (each test
-object, new in v2.5), and, on each track object,
-`manufacturer`, `model`, `manufacturerOther`, `modelOther`, `notes`,
-and `integratedLufs`.
+object, new in v2.5), `trackOption` (each test object, new in v2.7),
+and, on each track object, `manufacturer`, `model`,
+`manufacturerOther`, `modelOther`, `notes`, `integratedLufs`, and
+`itemIndex`, `distanceMm`, `highPass`, `polarPattern` (new in v2.7).
+
+`highPass` needs particular care. `{ "enabled": false }` is a
+meaningful value ("explicitly off"), not an empty object, and MUST be
+written whenever the filter is known to be off; it is not a default to
+be omitted. Only "not specified" is represented by omitting the key. A
+legacy explicit `null` for `highPass` MUST likewise be read as "not
+specified", never as "off".
 
 A small number of fields are exceptions and are instead always present
 with an explicit `null` value when unset, rather than being omitted:

@@ -167,9 +167,56 @@
         },
         "assets": { "$ref": "#/$defs/assets" },
         "swappedSetup": { "$ref": "#/$defs/swappedSetup" },
+        "trackOption": {
+          "type": "string",
+          "enum": ["distance", "highPass", "polarPattern"],
+          "description": "OPTIONAL. Names which track-level metadata category varies between this test's tracks: 'distance' -> tracks[].distanceMm, 'highPass' -> tracks[].highPass, 'polarPattern' -> tracks[].polarPattern. The values themselves live only on the tracks. When present, every track in tracks[] and swappedSetup.tracks[] MUST carry the mapped field (enforced below). Further per-slot rules (distinct values per itemIndex within a test, swappedSetup coupling) are normative prose only, see SPEC.md 'trackOption'. Omitted entirely when no track option applies. New in v2.7."
+        },
         "testTypeConfig": { "$ref": "#/$defs/testTypeConfig" }
       },
       "allOf": [
+        {
+          "if": {
+            "required": ["trackOption"],
+            "properties": { "trackOption": { "const": "distance" } }
+          },
+          "then": {
+            "properties": {
+              "tracks": { "items": { "required": ["distanceMm"] } },
+              "swappedSetup": {
+                "properties": { "tracks": { "items": { "required": ["distanceMm"] } } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["trackOption"],
+            "properties": { "trackOption": { "const": "highPass" } }
+          },
+          "then": {
+            "properties": {
+              "tracks": { "items": { "required": ["highPass"] } },
+              "swappedSetup": {
+                "properties": { "tracks": { "items": { "required": ["highPass"] } } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["trackOption"],
+            "properties": { "trackOption": { "const": "polarPattern" } }
+          },
+          "then": {
+            "properties": {
+              "tracks": { "items": { "required": ["polarPattern"] } },
+              "swappedSetup": {
+                "properties": { "tracks": { "items": { "required": ["polarPattern"] } } }
+              }
+            }
+          }
+        },
         {
           "if": {
             "required": ["testType"],
@@ -401,6 +448,22 @@
         },
         "content": { "$ref": "#/$defs/content" },
         "recording": { "$ref": "#/$defs/recording" },
+        "itemIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "OPTIONAL structural grouping key, scoped to the whole test set: tracks (in any test object, including swappedSetup.tracks) with the same itemIndex refer to the same item under comparison and MUST carry identical manufacturer/model/manufacturerOther/modelOther values. Assigned densely from 0. Either every track in the test set carries itemIndex or none does. Not a positional index and unrelated to trackId. Omitted entirely when not used. Track only, no override. New in v2.7."
+        },
+        "distanceMm": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "OPTIONAL recording distance of this track, in whole millimetres (e.g. 80 for 8 cm). Omitted entirely when not specified. Track only, no override. New in v2.7."
+        },
+        "highPass": { "$ref": "#/$defs/highPass" },
+        "polarPattern": {
+          "type": "string",
+          "enum": ["cardioid", "omni", "figure-8", "supercardioid", "hypercardioid"],
+          "description": "OPTIONAL polar pattern used for this track. Omitted entirely when not specified. Track only, no override. New in v2.7."
+        },
         "originalFormat": {
           "type": "string",
           "$comment": "TODO: exact string tokens for aac/m4a/ogg-vorbis are not given as examples in the source spec. Confirmed values: 'wav', 'aiff', 'mp3', 'flac'."
@@ -425,6 +488,28 @@
           "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for this test."
         }
       }
+    },
+    "highPass": {
+      "description": "OPTIONAL high-pass filter applied in the recording chain of this track. Three states: key omitted (or legacy null) = not specified; {\"enabled\": false} = explicitly off; {\"enabled\": true, \"frequencyHz\": <int>} = on. {\"enabled\": false} is a meaningful value, not an empty object, and MUST NOT be omitted. Track only, no override. New in v2.7.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": { "const": false }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "frequencyHz"],
+          "properties": {
+            "enabled": { "const": true },
+            "frequencyHz": { "type": "integer", "minimum": 1 }
+          }
+        }
+      ]
     },
     "ratingCategoryNumeric": {
       "type": "object",

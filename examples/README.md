@@ -1,7 +1,14 @@
 # Examples
 
-This directory is a placeholder. No example `.batest` files are
-included yet.
+No complete example `.batest` archives are included yet.
+
+Unpacked examples (JSON documents only, without audio files):
+
+- [`track-variants/`](track-variants/): a test set comparing two
+  microphones (KM 184, CC 8), each recorded at 80 mm and 160 mm. It
+  uses `itemIndex`, `trackOption: "distance"`, `distanceMm`,
+  `highPass`, and `polarPattern` (new in v2.7). Its audio files are
+  not included, so it cannot be played.
 
 Example files will be added here to demonstrate the format in
 practice — one or more `.batest` archives covering the different test

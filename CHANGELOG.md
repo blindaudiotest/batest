@@ -11,6 +11,48 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.7] - Unreleased
+
+### Added
+
+- Added four OPTIONAL, track-only fields to the track object
+  (`testSet.json`, `test[].tracks[]` and `swappedSetup.tracks[]`).
+  They are deliberately not part of `recording` and have no
+  override/merge rule and no test-level default:
+  - `itemIndex` (integer, `>= 0`): a test-set-wide structural grouping
+    key for the item under comparison. Tracks with the same
+    `itemIndex` refer to the same item, which makes several tracks of
+    the same item within one test representable. Values are assigned
+    densely from `0`. Either all tracks of a test set carry it or none
+    does. Tracks sharing a value MUST carry identical
+    `manufacturer`/`model`/`manufacturerOther`/`modelOther`.
+  - `distanceMm` (integer, `>= 1`): recording distance in millimetres.
+  - `highPass`: a high-pass filter applied in the recording chain of
+    the track, with three states. Key omitted (or legacy `null`) means
+    not specified. `{ "enabled": false }` means explicitly off.
+    `{ "enabled": true, "frequencyHz": <integer >= 1> }` means on.
+  - `polarPattern`: one of `"cardioid"`, `"omni"`, `"figure-8"`,
+    `"supercardioid"`, `"hypercardioid"`.
+- Added an OPTIONAL `trackOption` field to each test object (`"distance"`
+  | `"highPass"` | `"polarPattern"`), naming which of these track-level
+  categories varies between the test's tracks. The values live only on
+  the tracks; there is no separate value list. When `trackOption` is
+  set, every track in `tracks[]` and `swappedSetup.tracks[]` MUST carry
+  the mapped field (enforced by the JSON Schema). Tracks sharing an
+  `itemIndex` within a test MUST have distinct values. Each
+  `swappedSetup.tracks[i]` MUST match `tracks[i]` in `itemIndex` and in
+  the option value. No rectangular-grid requirement applies. These
+  rules are prose-only. Pairing and playback semantics for tests with
+  variants are implementation-defined.
+- Added the first example, `examples/track-variants/` (`manifest.json`
+  and `testSet.json` only, no audio): KM 184 and CC 8, each at 80 mm
+  and 160 mm.
+- The CI workflow now also validates unpacked example directories
+  (`examples/*/manifest.json`, `examples/*/testSet.json`).
+- This is a non-breaking, additive change. `formatVersion` remains `2`,
+  and files written by any v2.0–v2.6 implementation remain fully valid
+  under v2.7.
+
 ## [2.6] - 2026-09-04
 
 ### Changed

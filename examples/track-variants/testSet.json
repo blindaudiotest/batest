@@ -1,0 +1,140 @@
+{
+  "testSetId": "0199a6f0-3c1e-7a42-9b5d-2f8e4c6a1d03",
+  "creatorUuid": null,
+  "title": "KM 184 vs. CC 8 at 8 cm and 16 cm",
+  "description": "Two microphones, each recorded at two distances. Test 1 ranks all four recording variants; test 2 is a plain A/B of both microphones at 8 cm.",
+  "comparisonCategory": "microphones",
+  "test": [
+    {
+      "testId": 0,
+      "testType": "ranking",
+      "title": "All variants",
+      "soundSource": "acoustic-guitar",
+      "trackOption": "distance",
+      "tracks": [
+        {
+          "trackId": 0,
+          "filename": "track1.flac",
+          "originalFilename": "KM184_8cm.wav",
+          "manufacturer": "Neumann",
+          "model": "KM 184",
+          "label": null,
+          "itemIndex": 0,
+          "distanceMm": 80,
+          "highPass": { "enabled": false },
+          "polarPattern": "cardioid",
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0,
+          "integratedLufs": -20.1
+        },
+        {
+          "trackId": 1,
+          "filename": "track2.flac",
+          "originalFilename": "KM184_16cm.wav",
+          "manufacturer": "Neumann",
+          "model": "KM 184",
+          "label": null,
+          "itemIndex": 0,
+          "distanceMm": 160,
+          "highPass": { "enabled": false },
+          "polarPattern": "cardioid",
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0,
+          "integratedLufs": -23.4
+        },
+        {
+          "trackId": 2,
+          "filename": "track3.flac",
+          "originalFilename": "CC8_8cm.wav",
+          "manufacturer": "Schoeps",
+          "model": "CC 8",
+          "label": null,
+          "itemIndex": 1,
+          "distanceMm": 80,
+          "highPass": { "enabled": true, "frequencyHz": 80 },
+          "polarPattern": "figure-8",
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0,
+          "integratedLufs": -21.0
+        },
+        {
+          "trackId": 3,
+          "filename": "track4.flac",
+          "originalFilename": "CC8_16cm.wav",
+          "manufacturer": "Schoeps",
+          "model": "CC 8",
+          "label": null,
+          "itemIndex": 1,
+          "distanceMm": 160,
+          "polarPattern": "figure-8",
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0,
+          "integratedLufs": -24.2
+        }
+      ],
+      "backingTrack": null,
+      "loudnessMatching": {
+        "mode": "integrated-lufs",
+        "reference": "loudest",
+        "version": 1
+      },
+      "testTypeConfig": {
+        "ranking": { "testRounds": 3 }
+      }
+    },
+    {
+      "testId": 1,
+      "testType": "ab",
+      "title": "Microphones at 8 cm",
+      "soundSource": "acoustic-guitar",
+      "tracks": [
+        {
+          "trackId": 0,
+          "filename": "track5.flac",
+          "originalFilename": "KM184_8cm.wav",
+          "manufacturer": "Neumann",
+          "model": "KM 184",
+          "label": null,
+          "itemIndex": 0,
+          "distanceMm": 80,
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0
+        },
+        {
+          "trackId": 1,
+          "filename": "track6.flac",
+          "originalFilename": "CC8_8cm.wav",
+          "manufacturer": "Schoeps",
+          "model": "CC 8",
+          "label": null,
+          "itemIndex": 1,
+          "distanceMm": 80,
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0
+        }
+      ],
+      "backingTrack": null,
+      "testTypeConfig": {
+        "ab": { "testRounds": 2 }
+      }
+    }
+  ]
+}
