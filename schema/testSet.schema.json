@@ -461,8 +461,8 @@
         "highPass": { "$ref": "#/$defs/highPass" },
         "polarPattern": {
           "type": "string",
-          "enum": ["cardioid", "omni", "figure-8", "supercardioid", "hypercardioid"],
-          "description": "OPTIONAL polar pattern used for this track. Omitted entirely when not specified. Track only, no override. New in v2.7."
+          "enum": ["cardioid", "omni", "figure-8", "supercardioid", "hypercardioid", "wide-cardioid"],
+          "description": "OPTIONAL polar pattern used for this track. Omitted entirely when not specified. Track only, no override. New in v2.7; \"wide-cardioid\" added in v2.8."
         },
         "originalFormat": {
           "type": "string",

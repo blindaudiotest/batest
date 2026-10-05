@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.7
-**Status:** Draft — non-breaking, additive revision of v2.6
+**Version:** 2.8
+**Status:** Stable — non-breaking, additive revision of v2.7
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,13 +11,13 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.7, a non-breaking revision
-> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6 (`formatVersion` remains `2`; see
+> **v1.0 users:** This document describes v2.8, a non-breaking revision
+> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6/v2.7 (`formatVersion` remains `2`; see
 > [Top-Level Fields](#top-level-fields), [testTypeConfig](#testtypeconfig),
 > [swappedSetup](#swappedsetup), [trackOption](#trackoption), and
 > [Track Object Schema](#track-object-schema) for what's new/clarified).
-> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, or v2.6
-> implementation remain fully valid under v2.7. The v1.0
+> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, v2.6, or v2.7
+> implementation remain fully valid under v2.8. The v1.0
 > specification (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
@@ -723,8 +723,8 @@ and multitrack Ranking tests alike.
   MUST be read as "not specified", never as "off". *(New in v2.7.)*
 - `polarPattern` — the OPTIONAL polar pattern used for this track. One
   of `"cardioid"`, `"omni"`, `"figure-8"`, `"supercardioid"`,
-  `"hypercardioid"`. Omitted entirely when not specified. *(New in
-  v2.7.)*
+  `"hypercardioid"`, `"wide-cardioid"`. Omitted entirely when not
+  specified. *(New in v2.7; `"wide-cardioid"` added in v2.8.)*
 - `originalFormat` — the format of the file as originally uploaded.
   REQUIRED.
 - `storedFormat` — the format actually present in `required/` inside
@@ -832,6 +832,15 @@ from the test object.
 > Files written by a v2.0–v2.6 implementation (which omit all four
 > fields) remain fully valid under v2.7; implementations MUST treat an
 > absent field as "not specified".
+
+> **v2.8 change:** `polarPattern` gained a new value, `"wide-cardioid"`
+> (a pattern between omni and cardioid). This is a non-breaking,
+> additive change. `formatVersion` stays `2`, and no existing value
+> was removed or changed in meaning. Files written by a v2.0–v2.7
+> implementation remain fully valid under v2.8. A file that uses
+> `"wide-cardioid"` does not validate against the v2.7 JSON Schema,
+> whose `polarPattern` enum is closed, so implementations built against
+> v2.7 may report it as an unknown value.
 
 ### Format Conversion Rule
 

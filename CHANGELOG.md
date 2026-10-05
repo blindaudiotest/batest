@@ -11,7 +11,23 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
-## [2.7] - Unreleased
+## [2.8] - 2026-10-05
+
+### Added
+
+- Added `"wide-cardioid"` as a new value of the track-level
+  `polarPattern` field (`testSet.json`, `test[].tracks[]` and
+  `swappedSetup.tracks[]`), in both SPEC.md and
+  `schema/testSet.schema.json`. The name follows the existing
+  convention for these values: lowercase, with a hyphen between the
+  parts of a multi-part term (as in `"figure-8"`).
+- This is a non-breaking, additive change. `formatVersion` remains `2`,
+  no existing value was removed or changed in meaning, and files
+  written by any v2.0–v2.7 implementation remain fully valid under
+  v2.8. A file that uses `"wide-cardioid"` does not validate against
+  the v2.7 schema, whose `polarPattern` enum is closed.
+
+## [2.7] - 2026-10-03
 
 ### Added
 
