@@ -9,6 +9,13 @@ Unpacked examples (JSON documents only, without audio files):
   uses `itemIndex`, `trackOption: "distance"`, `distanceMm`,
   `highPass`, and `polarPattern` (new in v2.7). Its audio files are
   not included, so it cannot be played.
+- [`original-track/`](original-track/): a test set comparing two
+  compressors on the same dry drum recording, with the unprocessed
+  recording as `originalTrack` (new in v2.9). Test 1 is an A/B test
+  with `mode: "blend"` and loudness matching to the original
+  (`reference: "original"`). Test 2 is a Rating test with
+  `mode: "switch"` that references the same original file. Its audio
+  files are not included, so it cannot be played.
 
 Example files will be added here to demonstrate the format in
 practice — one or more `.batest` archives covering the different test

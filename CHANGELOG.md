@@ -11,6 +11,57 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.9] - 2026-10-08
+
+### Added
+
+- Added an OPTIONAL `originalTrack` field to each test object
+  (`testSet.json`, `test[]`), a sibling of `backingTrack`. It carries
+  the unprocessed source signal of the test, so that listeners can
+  switch between the original and the processed (compared) track, or
+  blend between them. It is intended for comparisons of signal
+  processing, but the format does not tie it to a category. The key is
+  omitted entirely when unused (never `null`).
+  - Audio fields, with the same meaning as on a track object:
+    `filename` (in `required/`), `originalFilename`, `originalFormat`,
+    `storedFormat`, `originalSampleRate`, `originalBitDepth` (`null`
+    for lossy formats), `durationSeconds`, and OPTIONAL
+    `integratedLufs`. The Format Conversion Rule applies. There is no
+    `trackId`, `manufacturer`, `model`, `itemIndex`, `label`, or
+    recording metadata. `manifest.json` is unchanged.
+  - `mode` (REQUIRED): `"switch"` (toggle; playback starts in the
+    processed state) or `"blend"` (continuous crossfade).
+  - `defaultBlendPercent` (integer, `0`–`100`): the initial share of
+    the processed signal. REQUIRED for `"blend"`, forbidden for
+    `"switch"` (enforced by the JSON Schema). Its meaning is defined by
+    a normative equal-power curve: with `p = defaultBlendPercent / 100`,
+    `gOriginal = cos(p·π/2)` and `gProcessed = sin(p·π/2)`.
+  - Valid for all test types, including `"rating"`, and combinable
+    with `swappedSetup`, `trackOption`, and `backingTrack`. One
+    original applies to all compared tracks of the test. Several tests
+    MAY reference the same original file.
+  - The original is independent of the compared tracks: its
+    `durationSeconds` does not count for `trackLengthMode` or for
+    deciding whether the compared tracks differ in length. It SHOULD
+    play position-synchronous with the compared tracks, padded with
+    silence if shorter and cut off if longer.
+- Added the value `"original"` to `loudnessMatching.reference`. When a
+  test object has both `originalTrack` and `loudnessMatching`,
+  `reference` MUST be `"original"`; `"original"` without
+  `originalTrack` is invalid. Both rules are enforced by the JSON
+  Schema. `loudnessMatching.version` is unchanged.
+- New prose rule: implementations SHOULD treat an unknown
+  `loudnessMatching.reference` value like `"loudest"` and warn.
+- Added the example `examples/original-track/` (`manifest.json` and
+  `testSet.json` only, no audio): one A/B test with `mode: "blend"`
+  and loudness matching to the original, and one Rating test with
+  `mode: "switch"` sharing the same original file.
+- This is a non-breaking, additive change. `formatVersion` remains `2`,
+  and files written by any v2.0–v2.8 implementation remain fully valid
+  under v2.9. A file that uses `originalTrack` does not validate
+  against the v2.8 schema, whose test object does not allow additional
+  properties.
+
 ## [2.8] - 2026-10-05
 
 ### Added

@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.8
-**Status:** Stable — non-breaking, additive revision of v2.7
+**Version:** 2.9
+**Status:** Stable — non-breaking, additive revision of v2.8
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,13 +11,14 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.8, a non-breaking revision
-> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6/v2.7 (`formatVersion` remains `2`; see
+> **v1.0 users:** This document describes v2.9, a non-breaking revision
+> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6/v2.7/v2.8 (`formatVersion` remains `2`; see
 > [Top-Level Fields](#top-level-fields), [testTypeConfig](#testtypeconfig),
-> [swappedSetup](#swappedsetup), [trackOption](#trackoption), and
+> [swappedSetup](#swappedsetup), [trackOption](#trackoption),
+> [originalTrack](#originaltrack), and
 > [Track Object Schema](#track-object-schema) for what's new/clarified).
-> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, v2.6, or v2.7
-> implementation remain fully valid under v2.8. The v1.0
+> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, v2.6, v2.7, or
+> v2.8 implementation remain fully valid under v2.9. The v1.0
 > specification (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
@@ -35,13 +36,14 @@ document are to be interpreted as described in RFC 2119.
    2. [Test Object Schema](#test-object-schema)
    3. [Field Placement and Overrides](#field-placement-and-overrides)
    4. [backingTrack](#backingtrack)
-   5. [loudnessMatching](#loudnessmatching)
-   6. [trackLengthMode](#tracklengthmode)
-   7. [Track Object Schema](#track-object-schema)
-   8. [Format Conversion Rule](#format-conversion-rule)
-   9. [testTypeConfig](#testtypeconfig)
-   10. [swappedSetup](#swappedsetup)
-   11. [trackOption](#trackoption)
+   5. [originalTrack](#originaltrack)
+   6. [loudnessMatching](#loudnessmatching)
+   7. [trackLengthMode](#tracklengthmode)
+   8. [Track Object Schema](#track-object-schema)
+   9. [Format Conversion Rule](#format-conversion-rule)
+   10. [testTypeConfig](#testtypeconfig)
+   11. [swappedSetup](#swappedsetup)
+   12. [trackOption](#trackoption)
 7. [Assets](#assets)
 8. [Resources](#resources)
 9. [Test Results](#test-results)
@@ -109,7 +111,7 @@ MyTest.batest
   the archive.
 - `required/` contains every audio file that is necessary to run any
   test in the set (tracks, and, if present, each test's backing
-  track). Implementations MUST treat the files in this directory as
+  track and original track). Implementations MUST treat the files in this directory as
   required for playback.
 - `assets/` contains optional supporting files (images, video, PDF
   documents) referenced from `testSet.json`. See [Assets](#assets).
@@ -365,6 +367,10 @@ entirely when empty, per the
   REQUIRED. See [Track Object Schema](#track-object-schema).
 - `backingTrack` — see [backingTrack](#backingtrack). REQUIRED (always
   present; `null` when unused).
+- `originalTrack` — OPTIONAL. The unprocessed source signal of this
+  test, which listeners can switch or blend to. The key is omitted
+  entirely when the test has no original (never `null`, unlike
+  `backingTrack`). See [originalTrack](#originaltrack). *(New in v2.9.)*
 - `loudnessMatching` — see [loudnessMatching](#loudnessmatching).
 - `trackLengthMode` — see [trackLengthMode](#tracklengthmode).
 - `assets` — OPTIONAL, test-specific assets. See
@@ -430,6 +436,18 @@ entirely when empty, per the
 > under v2.7; implementations reading a test object without
 > `trackOption` MUST treat it as "no track option".
 
+> **v2.9 change:** each test object gained a new OPTIONAL
+> `originalTrack` field, a sibling of `backingTrack`, carrying the
+> unprocessed source signal of the test, so that listeners can switch
+> between the original and the processed (compared) track, or blend
+> between them. `loudnessMatching.reference` gained the value
+> `"original"` for use with it. See [originalTrack](#originaltrack) and
+> [loudnessMatching](#loudnessmatching). This is a non-breaking,
+> additive change — `formatVersion` stays `2`. Files written by a
+> v2.0–v2.8 implementation (which omit this field) remain fully valid
+> under v2.9; implementations reading a test object without
+> `originalTrack` MUST treat it as "no original available".
+
 ### Field Placement and Overrides
 
 v2 introduces multiple valid nesting levels for `content`, `recording`,
@@ -443,6 +461,13 @@ level. Each field's valid levels are:
 | `recording` | ❌                  | ✅           | ✅             |
 | `assets`    | ✅                  | ✅           | ❌             |
 | `itemIndex`, `distanceMm`, `highPass`, `polarPattern` | ❌ | ❌ | ✅ (track only, no override) |
+| `originalTrack` | ❌ | ✅ (test only, no override) | ❌ |
+
+`originalTrack` (new in v2.9) exists **only** on test objects. It is
+not a track object and has no `content` or `recording` of its own; it
+takes part in no override or merge rule (the `content`/`recording`
+override rule below resolves onto track objects only). See
+[originalTrack](#originaltrack).
 
 `itemIndex`, `distanceMm`, `highPass`, and `polarPattern` (new in v2.7)
 exist **only** on track objects (including `swappedSetup.tracks[]`) and
@@ -549,6 +574,122 @@ that test does not use a backing track (see
 - `gainDb` — a gain offset in decibels applied to the backing track on
   playback, relative to its own original loudness.
 
+### originalTrack
+
+`originalTrack` is an OPTIONAL field on a test object *(new in v2.9)*,
+a sibling of `backingTrack`. It carries the unprocessed source signal
+of the test — the signal before the processing that the compared
+tracks differ in. During the test, listeners can switch between the
+original and the processed signal, or blend continuously between the
+two, to hear what the processing does. The field is intended for
+comparisons of signal processing (e.g. effects). This specification
+does not tie it to a `comparisonCategory`; the format stays
+category-agnostic.
+
+The key is omitted entirely when the test has no original. Unlike
+`backingTrack`, it is never written as `null` (see
+[Schema Hygiene Convention](#schema-hygiene-convention)).
+
+```json
+"originalTrack": {
+  "filename": "original1.flac",
+  "originalFilename": "Drums_dry.wav",
+  "originalFormat": "wav",
+  "storedFormat": "flac",
+  "originalSampleRate": 48000,
+  "originalBitDepth": 24,
+  "durationSeconds": 32.0,
+  "integratedLufs": -19.5,
+  "mode": "blend",
+  "defaultBlendPercent": 70
+}
+```
+
+The audio fields have the same meaning as on a regular track object
+(see [Track Object Schema](#track-object-schema)):
+
+- `filename` — the technical name the original's audio file is stored
+  under in `required/`. REQUIRED. Same semantics as `tracks[].filename`.
+- `originalFilename` — the name of the file as originally uploaded,
+  for display only. REQUIRED.
+- `originalFormat` / `storedFormat` — REQUIRED. The
+  [Format Conversion Rule](#format-conversion-rule) applies.
+- `originalSampleRate` — REQUIRED, in Hz.
+- `originalBitDepth` — REQUIRED, `null` for lossy-compressed formats.
+- `durationSeconds` — the original's duration, in seconds. REQUIRED.
+  See the playback rules below for how it relates to the compared
+  tracks.
+- `integratedLufs` — OPTIONAL; omitted entirely when loudness matching
+  was not run for this test (the test object's `loudnessMatching`
+  block is absent), as for regular tracks.
+
+`originalTrack` is **not** a track object. It MUST NOT carry
+`trackId`, `manufacturer`, `model`, `manufacturerOther`, `modelOther`,
+`itemIndex`, `label`, `notes`, `content`, `recording`, `distanceMm`,
+`highPass`, or `polarPattern`. It does not contribute to
+`manifest.json`'s `models` array; `manifest.json` is unchanged by this
+field.
+
+Two fields define how the listener uses the original:
+
+- `mode` — REQUIRED. One of:
+  - `"switch"` — the listener toggles between the original and the
+    processed signal. Playback MUST start in the processed state.
+  - `"blend"` — the listener crossfades continuously between the
+    original and the processed signal, starting at
+    `defaultBlendPercent`.
+- `defaultBlendPercent` — an integer from `0` to `100`: the share of
+  the **processed** signal in the initial mix (`0` = original only,
+  `100` = processed only). REQUIRED when `mode` is `"blend"`; MUST NOT
+  be present when `mode` is `"switch"`. Both rules are enforced by the
+  JSON Schema.
+
+**Blend curve (normative).** A blend percentage is defined by an
+equal-power curve. With `p = defaultBlendPercent / 100`, the linear
+amplitude gains are:
+
+```text
+gOriginal  = cos(p · π / 2)
+gProcessed = sin(p · π / 2)
+```
+
+So `0` plays the original at full level and the processed signal
+silent, `100` the reverse, and `50` plays both at about −3 dB.
+Implementations MUST interpret `defaultBlendPercent` according to this
+curve. The gains are applied in addition to any loudness-matching gain
+of the respective signal.
+
+The following rules govern `originalTrack`:
+
+- **All test types.** `originalTrack` is valid for every `testType`,
+  including `"rating"`. It can be combined with `swappedSetup`, with
+  track variants (`trackOption`), and with `backingTrack`.
+- **One original per test.** The original applies to every compared
+  track of the test object — every entry of `tracks[]` and, if
+  present, of `swappedSetup.tracks[]`. In both modes, "processed"
+  means the compared track currently being played. A `backingTrack`,
+  if present, keeps playing unchanged; switching or blending never
+  affects it.
+- **Independent of the compared tracks.** The original does not change
+  the compared tracks or their behavior. Its `durationSeconds` MUST
+  NOT be taken into account for `trackLengthMode`, nor when deciding
+  whether the compared tracks have different durations (see
+  [trackLengthMode](#tracklengthmode)). `trackLengthMode` applies only
+  to the compared tracks.
+- **Playback alignment.** The original SHOULD play position-synchronous
+  with the compared tracks and follow their playback length: if the
+  original is shorter, it SHOULD be padded with silence; if it is
+  longer, it SHOULD be cut off at the end of the compared tracks'
+  playback.
+- **Shared files.** Several test objects MAY reference the same audio
+  file in `required/` through their `originalTrack.filename`.
+
+Implementations that do not support `originalTrack` ignore it, as for
+any unknown field (see
+[Versioning and Compatibility](#versioning-and-compatibility)). A file
+that uses `originalTrack` does not validate against the v2.8 JSON
+Schema, whose test object does not allow additional properties.
+
 ### loudnessMatching
 
 `loudnessMatching` describes the loudness-matching behavior used for a
@@ -567,8 +708,22 @@ was enabled.
 
 - `mode` — the loudness-measurement method used. Currently, the only
   defined value is `"integrated-lufs"`.
-- `reference` — which track's loudness the others are matched to.
-  Currently, the only defined value is `"loudest"`.
+- `reference` — which signal the compared tracks are loudness-matched
+  to. Defined values:
+  - `"loudest"` — the loudest of the compared tracks.
+  - `"original"` — the test object's `originalTrack` *(new in v2.9)*.
+    The compared tracks are matched to the original's loudness.
+
+  The following rules apply, and both are enforced by the JSON Schema:
+  - When a test object has both `originalTrack` and `loudnessMatching`,
+    `reference` MUST be `"original"`.
+  - `reference` MUST NOT be `"original"` on a test object without
+    `originalTrack`.
+
+  Implementations that encounter a `reference` value they do not
+  recognize SHOULD treat it like `"loudest"` and SHOULD warn the user.
+  This also covers an implementation that predates v2.9 and reads
+  `"original"`.
 - `version` — the calculation version of `mode` at the time the test
   was exported. This is tracked independently of `formatVersion` and
   is incremented whenever that mode's calculation logic changes, so
@@ -577,7 +732,8 @@ was enabled.
   though `mode`'s name stays the same. Implementations SHOULD treat
   `version` as informational metadata about how a track's
   `integratedLufs` was derived, not as something to validate or
-  reject.
+  reject. Adding `"original"` to `reference` in v2.9 did not change
+  `version`.
 
 Implementations MUST accept files that predate this convention and may
 still contain a legacy `enabled` and/or `target` field inside the
@@ -600,6 +756,11 @@ This field is OPTIONAL and is only meaningful — and only ever written
 omitted entirely when all of the test's tracks have the same length
 (or there is only one track). Implementations MUST assume `"shortest"`
 when the key is absent but the tracks do have different lengths.
+
+Only the compared tracks count here. A test object's `originalTrack`
+(new in v2.9) is not a compared track: its duration is ignored both
+for this field and for deciding whether the tracks have different
+lengths. See [originalTrack](#originaltrack).
 
 `trackLengthMode` does not apply to a test object whose `testType` is
 `rating` (`testTypeConfig.rating`): a Rating test presents one track at
@@ -1319,7 +1480,8 @@ each test object's `title` (new in v2.1), each test object's
 (testSet.json root, new in v2.3), `requiresSuccessfulAbx`
 (`testTypeConfig.abx-then-ab`, new in v2.4), `swappedSetup` (each test
 object, new in v2.5), `trackOption` (each test object, new in v2.7),
-and, on each track object, `manufacturer`, `model`,
+`originalTrack` (each test object, new in v2.9) and its
+`integratedLufs` sub-field, and, on each track object, `manufacturer`, `model`,
 `manufacturerOther`, `modelOther`, `notes`, `integratedLufs`, and
 `itemIndex`, `distanceMm`, `highPass`, `polarPattern` (new in v2.7).
 
@@ -1338,7 +1500,15 @@ object), `label` (on each track object), and
 `originalBitDepth` (on each track object) is likewise always present,
 but is `null` for a different reason: not because the value is unset,
 but because the concept of bit depth does not apply to lossy-compressed
-formats.
+formats. The same applies to `originalTrack.originalBitDepth` (new in
+v2.9).
+
+`originalTrack` and `backingTrack` are siblings but follow different
+rules: `backingTrack` is always present and `null` when unused, while
+`originalTrack` is omitted entirely when unused and MUST NOT be
+written as `null`. `originalTrack.defaultBlendPercent` is not an
+optional field in this sense: it is required for `mode: "blend"` and
+forbidden for `mode: "switch"` (see [originalTrack](#originaltrack)).
 
 ## Identifier Stability
 

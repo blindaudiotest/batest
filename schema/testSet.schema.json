@@ -143,6 +143,7 @@
           ],
           "description": "Always present; null when this test does not use a backing track."
         },
+        "originalTrack": { "$ref": "#/$defs/originalTrack" },
         "loudnessMatching": {
           "type": "object",
           "additionalProperties": false,
@@ -155,7 +156,7 @@
             },
             "reference": {
               "type": "string",
-              "$comment": "Currently the only defined value is 'loudest'."
+              "description": "Which signal the compared tracks are loudness-matched to. Defined values: 'loudest' (the loudest compared track) and 'original' (this test object's originalTrack, new in v2.9). 'original' is only valid when originalTrack is present, and MUST be used whenever originalTrack is present (both enforced below). Deliberately not a closed enum: implementations SHOULD treat an unknown value like 'loudest' and warn, per SPEC.md 'loudnessMatching'."
             },
             "version": { "type": "integer" }
           }
@@ -175,6 +176,36 @@
         "testTypeConfig": { "$ref": "#/$defs/testTypeConfig" }
       },
       "allOf": [
+        {
+          "$comment": "v2.9: when both originalTrack and loudnessMatching are present, loudnessMatching.reference MUST be 'original'.",
+          "if": {
+            "required": ["originalTrack", "loudnessMatching"]
+          },
+          "then": {
+            "properties": {
+              "loudnessMatching": {
+                "type": "object",
+                "properties": { "reference": { "const": "original" } }
+              }
+            }
+          }
+        },
+        {
+          "$comment": "v2.9: loudnessMatching.reference 'original' is only valid when originalTrack is present.",
+          "if": {
+            "required": ["loudnessMatching"],
+            "properties": {
+              "loudnessMatching": {
+                "type": "object",
+                "required": ["reference"],
+                "properties": { "reference": { "const": "original" } }
+              }
+            }
+          },
+          "then": {
+            "required": ["originalTrack"]
+          }
+        },
         {
           "if": {
             "required": ["trackOption"],
@@ -488,6 +519,82 @@
           "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for this test."
         }
       }
+    },
+    "originalTrack": {
+      "type": "object",
+      "description": "OPTIONAL, test-object level only (sibling of backingTrack). The unprocessed source signal of this test, intended for comparisons of signal processing: listeners can switch between it and the processed (compared) track, or blend between the two. Applies to every compared track of the test (tracks[] and swappedSetup.tracks[]). Independent of the compared tracks: its durationSeconds does not take part in trackLengthMode or in determining whether the compared tracks differ in length. Not a track object: no trackId, manufacturer, model, itemIndex, label, content, recording, or other recording fields. Several test objects MAY reference the same file in required/. Omitted entirely when unused (never null). See SPEC.md 'originalTrack'. New in v2.9.",
+      "additionalProperties": false,
+      "required": [
+        "filename",
+        "originalFilename",
+        "originalFormat",
+        "storedFormat",
+        "originalSampleRate",
+        "originalBitDepth",
+        "durationSeconds",
+        "mode"
+      ],
+      "properties": {
+        "filename": {
+          "type": "string",
+          "description": "Technical name the original's audio file is stored under in required/. Same semantics as tracks[].filename."
+        },
+        "originalFilename": {
+          "type": "string",
+          "description": "Name of the file as originally uploaded by the user. Display purposes only."
+        },
+        "originalFormat": {
+          "type": "string",
+          "$comment": "Same tokens as tracks[].originalFormat. The Format Conversion Rule applies."
+        },
+        "storedFormat": {
+          "type": "string",
+          "$comment": "Same tokens as tracks[].storedFormat. The Format Conversion Rule applies."
+        },
+        "originalSampleRate": {
+          "type": "integer",
+          "description": "Sample rate of the originally uploaded file, in Hz."
+        },
+        "originalBitDepth": {
+          "type": ["integer", "null"],
+          "description": "Bit depth of the originally uploaded file. Always present; null for lossy-compressed formats."
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Duration of the original, in seconds. Informational; does not affect trackLengthMode."
+        },
+        "integratedLufs": {
+          "type": "number",
+          "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for this test."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["switch", "blend"],
+          "description": "How the listener uses the original. 'switch': toggle between original and processed; playback starts in the processed state. 'blend': continuous crossfade between original and processed, starting at defaultBlendPercent."
+        },
+        "defaultBlendPercent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Initial share of the processed signal, in percent (0 = original only, 100 = processed only), using the normative equal-power curve with p = defaultBlendPercent / 100: gOriginal = cos(p * pi / 2), gProcessed = sin(p * pi / 2). REQUIRED when mode is 'blend'; MUST NOT be present when mode is 'switch'."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["mode"],
+            "properties": { "mode": { "const": "blend" } }
+          },
+          "then": { "required": ["defaultBlendPercent"] }
+        },
+        {
+          "if": {
+            "required": ["mode"],
+            "properties": { "mode": { "const": "switch" } }
+          },
+          "then": { "not": { "required": ["defaultBlendPercent"] } }
+        }
+      ]
     },
     "highPass": {
       "description": "OPTIONAL high-pass filter applied in the recording chain of this track. Three states: key omitted (or legacy null) = not specified; {\"enabled\": false} = explicitly off; {\"enabled\": true, \"frequencyHz\": <int>} = on. {\"enabled\": false} is a meaningful value, not an empty object, and MUST NOT be omitted. Track only, no override. New in v2.7.",

@@ -1,0 +1,136 @@
+{
+  "testSetId": "0199c2a4-7b10-7e35-a8d1-5c3f9e2b6a17",
+  "creatorUuid": null,
+  "title": "1176LN vs. LA-2A on dry drums",
+  "description": "Two compressors on the same dry drum recording. The unprocessed recording is included as the original. Test 1 is an A/B test with a blend control; test 2 rates both compressors with an on/off switch to the original.",
+  "comparisonCategory": "effects",
+  "test": [
+    {
+      "testId": 0,
+      "testType": "ab",
+      "title": "Compressors, parallel blend",
+      "soundSource": "drums",
+      "tracks": [
+        {
+          "trackId": 0,
+          "filename": "track1.flac",
+          "originalFilename": "Drums_1176.wav",
+          "manufacturer": "Universal Audio",
+          "model": "1176LN",
+          "label": null,
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0,
+          "integratedLufs": -17.2
+        },
+        {
+          "trackId": 1,
+          "filename": "track2.flac",
+          "originalFilename": "Drums_LA2A.wav",
+          "manufacturer": "Teletronix",
+          "model": "LA-2A",
+          "label": null,
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0,
+          "integratedLufs": -18.0
+        }
+      ],
+      "backingTrack": null,
+      "originalTrack": {
+        "filename": "original1.flac",
+        "originalFilename": "Drums_dry.wav",
+        "originalFormat": "wav",
+        "storedFormat": "flac",
+        "originalSampleRate": 48000,
+        "originalBitDepth": 24,
+        "durationSeconds": 32.0,
+        "integratedLufs": -19.5,
+        "mode": "blend",
+        "defaultBlendPercent": 70
+      },
+      "loudnessMatching": {
+        "mode": "integrated-lufs",
+        "reference": "original",
+        "version": 1
+      },
+      "testTypeConfig": {
+        "ab": { "testRounds": 2 }
+      }
+    },
+    {
+      "testId": 1,
+      "testType": "rating",
+      "title": "Compressors, on/off",
+      "soundSource": "drums",
+      "tracks": [
+        {
+          "trackId": 0,
+          "filename": "track3.flac",
+          "originalFilename": "Drums_1176.wav",
+          "manufacturer": "Universal Audio",
+          "model": "1176LN",
+          "label": null,
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0
+        },
+        {
+          "trackId": 1,
+          "filename": "track4.flac",
+          "originalFilename": "Drums_LA2A.wav",
+          "manufacturer": "Teletronix",
+          "model": "LA-2A",
+          "label": null,
+          "originalFormat": "wav",
+          "storedFormat": "flac",
+          "originalSampleRate": 48000,
+          "originalBitDepth": 24,
+          "durationSeconds": 30.0
+        }
+      ],
+      "backingTrack": null,
+      "originalTrack": {
+        "filename": "original1.flac",
+        "originalFilename": "Drums_dry.wav",
+        "originalFormat": "wav",
+        "storedFormat": "flac",
+        "originalSampleRate": 48000,
+        "originalBitDepth": 24,
+        "durationSeconds": 32.0,
+        "mode": "switch"
+      },
+      "testTypeConfig": {
+        "rating": {
+          "ratingMode": "blind",
+          "ratingCategories": [
+            {
+              "id": 0,
+              "label": "Punch",
+              "scaleType": "numeric",
+              "scaleMin": 1,
+              "scaleMax": 5,
+              "scaleMinLabel": "Soft",
+              "scaleMaxLabel": "Punchy"
+            },
+            {
+              "id": 1,
+              "label": "Compression amount",
+              "scaleType": "bipolar",
+              "scaleRadius": 5,
+              "centerLabel": "Just right",
+              "negativeLabel": "Too little",
+              "positiveLabel": "Too much"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
