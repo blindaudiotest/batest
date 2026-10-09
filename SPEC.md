@@ -1,7 +1,7 @@
 # Blind Audio Test File Format Specification (`.batest`)
 
-**Version:** 2.9
-**Status:** Stable — non-breaking, additive revision of v2.8
+**Version:** 2.10
+**Status:** Stable — non-breaking, additive revision of v2.9
 
 This document is the authoritative specification of the `.batest` file
 format, an open, ZIP-based container format for storing reproducible
@@ -11,14 +11,14 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
 "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
 document are to be interpreted as described in RFC 2119.
 
-> **v1.0 users:** This document describes v2.9, a non-breaking revision
-> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6/v2.7/v2.8 (`formatVersion` remains `2`; see
+> **v1.0 users:** This document describes v2.10, a non-breaking revision
+> of v2.0/v2.1/v2.2/v2.3/v2.4/v2.5/v2.6/v2.7/v2.8/v2.9 (`formatVersion` remains `2`; see
 > [Top-Level Fields](#top-level-fields), [testTypeConfig](#testtypeconfig),
 > [swappedSetup](#swappedsetup), [trackOption](#trackoption),
 > [originalTrack](#originaltrack), and
 > [Track Object Schema](#track-object-schema) for what's new/clarified).
-> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, v2.6, v2.7, or
-> v2.8 implementation remain fully valid under v2.9. The v1.0
+> Files produced by a v2.0, v2.1, v2.2, v2.3, v2.4, v2.5, v2.6, v2.7,
+> v2.8, or v2.9 implementation remain fully valid under v2.10. The v1.0
 > specification (single-test `test.json` structure)
 > remains available in this repository's git history via the `v1.0`
 > tag/release. See [Migration from v1](#migration-from-v1) for a
@@ -600,6 +600,7 @@ The key is omitted entirely when the test has no original. Unlike
   "originalBitDepth": 24,
   "durationSeconds": 32.0,
   "integratedLufs": -19.5,
+  "notes": "Drum bus before compression, no EQ",
   "mode": "blend",
   "defaultBlendPercent": 70
 }
@@ -622,10 +623,15 @@ The audio fields have the same meaning as on a regular track object
 - `integratedLufs` — OPTIONAL; omitted entirely when loudness matching
   was not run for this test (the test object's `loudnessMatching`
   block is absent), as for regular tracks.
+- `notes` — an OPTIONAL free-text note about the original, with the
+  same shape and hygiene rule as `tracks[].notes`: a string, and the
+  key is omitted entirely when no note was set (never `null` or `""`).
+  It is descriptive only and has no effect on playback, switching, or
+  blending. *(New in v2.10.)*
 
 `originalTrack` is **not** a track object. It MUST NOT carry
 `trackId`, `manufacturer`, `model`, `manufacturerOther`, `modelOther`,
-`itemIndex`, `label`, `notes`, `content`, `recording`, `distanceMm`,
+`itemIndex`, `label`, `content`, `recording`, `distanceMm`,
 `highPass`, or `polarPattern`. It does not contribute to
 `manifest.json`'s `models` array; `manifest.json` is unchanged by this
 field.
@@ -689,6 +695,22 @@ any unknown field (see
 [Versioning and Compatibility](#versioning-and-compatibility)). A file
 that uses `originalTrack` does not validate against the v2.8 JSON
 Schema, whose test object does not allow additional properties.
+
+> **v2.10 change:** `originalTrack` gained a new OPTIONAL `notes`
+> field, a free-text note about the original, following the same
+> convention as `tracks[].notes` (string, key omitted when no note was
+> set). Before v2.10, `notes` was listed among the fields
+> `originalTrack` MUST NOT carry; that prohibition is lifted for
+> `notes` only, and every other field on that list stays forbidden.
+> `label` in particular stays forbidden: the original has no display
+> name of its own. This is a non-breaking, additive change —
+> `formatVersion` stays `2`. Files written by a v2.9 implementation
+> (which never write `originalTrack.notes`) remain fully valid under
+> v2.10; implementations reading an `originalTrack` without `notes`
+> MUST treat it as "no note". Implementations that predate v2.10 ignore
+> the field, as for any unknown field. A file that uses
+> `originalTrack.notes` does not validate against the v2.9 JSON Schema,
+> whose `originalTrack` does not allow additional properties.
 
 ### loudnessMatching
 
@@ -1481,7 +1503,8 @@ each test object's `title` (new in v2.1), each test object's
 (`testTypeConfig.abx-then-ab`, new in v2.4), `swappedSetup` (each test
 object, new in v2.5), `trackOption` (each test object, new in v2.7),
 `originalTrack` (each test object, new in v2.9) and its
-`integratedLufs` sub-field, and, on each track object, `manufacturer`, `model`,
+`integratedLufs` sub-field and `notes` sub-field (new in v2.10), and,
+on each track object, `manufacturer`, `model`,
 `manufacturerOther`, `modelOther`, `notes`, `integratedLufs`, and
 `itemIndex`, `distanceMm`, `highPass`, `polarPattern` (new in v2.7).
 

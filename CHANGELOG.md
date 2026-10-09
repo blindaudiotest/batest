@@ -11,6 +11,29 @@ breaking changes to existing fields or structures increment the major
 version; additive, backward-compatible changes can go into a minor
 version.
 
+## [2.10] - 2026-10-09
+
+### Added
+
+- Added an OPTIONAL `notes` field to `originalTrack` (`testSet.json`,
+  `test[].originalTrack`), in both SPEC.md and
+  `schema/testSet.schema.json`. It is a free-text note about the
+  original and follows the existing `tracks[].notes` convention: a
+  string, and the key is omitted entirely when no note was set (never
+  `null` or `""`). It is descriptive only and does not affect
+  playback, switching, or blending.
+- `notes` is removed from the list of fields `originalTrack` MUST NOT
+  carry. Every other field on that list stays forbidden; in particular
+  `originalTrack` still has no `label`.
+- `examples/original-track/`: the original of the A/B test now carries
+  a `notes` value. The Rating test's original has none and omits the
+  key.
+- This is a non-breaking, additive change. `formatVersion` remains `2`,
+  and files written by any v2.0–v2.9 implementation remain fully valid
+  under v2.10. A file that uses `originalTrack.notes` does not validate
+  against the v2.9 schema, whose `originalTrack` does not allow
+  additional properties.
+
 ## [2.9] - 2026-10-08
 
 ### Added

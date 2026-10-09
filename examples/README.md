@@ -14,8 +14,10 @@ Unpacked examples (JSON documents only, without audio files):
   recording as `originalTrack` (new in v2.9). Test 1 is an A/B test
   with `mode: "blend"` and loudness matching to the original
   (`reference: "original"`). Test 2 is a Rating test with
-  `mode: "switch"` that references the same original file. Its audio
-  files are not included, so it cannot be played.
+  `mode: "switch"` that references the same original file. Test 1's
+  original carries a `notes` value (new in v2.10); test 2's original
+  has no note and omits the key. Its audio files are not included, so
+  it cannot be played.
 
 Example files will be added here to demonstrate the format in
 practice — one or more `.batest` archives covering the different test

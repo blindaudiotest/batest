@@ -522,7 +522,7 @@
     },
     "originalTrack": {
       "type": "object",
-      "description": "OPTIONAL, test-object level only (sibling of backingTrack). The unprocessed source signal of this test, intended for comparisons of signal processing: listeners can switch between it and the processed (compared) track, or blend between the two. Applies to every compared track of the test (tracks[] and swappedSetup.tracks[]). Independent of the compared tracks: its durationSeconds does not take part in trackLengthMode or in determining whether the compared tracks differ in length. Not a track object: no trackId, manufacturer, model, itemIndex, label, content, recording, or other recording fields. Several test objects MAY reference the same file in required/. Omitted entirely when unused (never null). See SPEC.md 'originalTrack'. New in v2.9.",
+      "description": "OPTIONAL, test-object level only (sibling of backingTrack). The unprocessed source signal of this test, intended for comparisons of signal processing: listeners can switch between it and the processed (compared) track, or blend between the two. Applies to every compared track of the test (tracks[] and swappedSetup.tracks[]). Independent of the compared tracks: its durationSeconds does not take part in trackLengthMode or in determining whether the compared tracks differ in length. Not a track object: no trackId, manufacturer, model, itemIndex, label, content, recording, or other recording fields. Several test objects MAY reference the same file in required/. Omitted entirely when unused (never null). See SPEC.md 'originalTrack'. New in v2.9; optional notes added in v2.10.",
       "additionalProperties": false,
       "required": [
         "filename",
@@ -566,6 +566,10 @@
         "integratedLufs": {
           "type": "number",
           "description": "Measured integrated loudness (LUFS). Omitted entirely when loudness matching was not run for this test."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text note about the original. Same convention as tracks[].notes: omitted entirely when unset. Descriptive only, no effect on playback. New in v2.10."
         },
         "mode": {
           "type": "string",

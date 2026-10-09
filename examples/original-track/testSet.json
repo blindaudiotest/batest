@@ -50,6 +50,7 @@
         "originalBitDepth": 24,
         "durationSeconds": 32.0,
         "integratedLufs": -19.5,
+        "notes": "Drum bus before compression, no EQ",
         "mode": "blend",
         "defaultBlendPercent": 70
       },
